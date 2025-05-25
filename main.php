@@ -44,13 +44,18 @@ try {
 
 // Separator
 
+class TelegramBotHandler
+{
+
+}
+
 $loop = Loop::get();
 $lastUpdateId = 0;
 
 $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
     $response = Request::getUpdates([
         'offset' => $lastUpdateId + 1,
-        'timeout' => 5
+        'timeout' => 1
     ]);
 
     if ($response->isOk()) {
