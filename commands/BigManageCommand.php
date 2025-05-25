@@ -57,52 +57,44 @@ class BigManageCommand extends UserCommand
                     'text' => $user->getTranslatedMessage($team)
                 ]);
             }
-            $buildMenu = false;
-
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
                     return Request::sendMessage([
                         'chat_id' => $chat->getId(),
                         'text' => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
                     ]);
-                } else if (false && sizeof($team->getAccesses()) === 1) {
+                } else if (sizeof($team->getAccesses()) === 1) {
                     return Request::sendMessage([
                         'chat_id' => $chat->getId(),
                         'text' => BigManageStrings::translateMessage(
-                            "You already have established access to the team '"
-                            . $team->getTitle() . "' and have no other team accesses.",
+                            str_replace(
+                                "{title}",
+                                $team->getTitle(),
+                                BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
+                            ),
                             $team
                         )
                     ]);
-                } else {
-                    $buildMenu = true;
                 }
-            } else {
-                if (empty($team->getAccesses())) {
-                    return Request::sendMessage([
-                        'chat_id' => $chat->getId(),
-                        'text' => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
-                    ]);
-                } else {
-                    $buildMenu = true;
-                }
-            }
-
-            if ($buildMenu || true) {
-                $choices = array();
-
-                foreach ($team->getAccesses() as $index => $teamAccess) {
-                    $choices[] = [
-                        "text" => $teamAccess->getTitle(),
-                        "callback_data" => $index
-                    ];
-                }
+            } else if (empty($team->getAccesses())) {
                 return Request::sendMessage([
                     'chat_id' => $chat->getId(),
-                    'text' => 'Please select an option:',
-                    'reply_markup' => new InlineKeyboard($choices)
+                    'text' => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
                 ]);
             }
+            $choices = array();
+
+            foreach ($team->getAccesses() as $index => $teamAccess) {
+                $choices[] = [
+                    "text" => $teamAccess->getTitle(),
+                    "callback_data" => $index
+                ];
+            }
+            return Request::sendMessage([
+                'chat_id' => $chat->getId(),
+                'text' => 'Please select an option:',
+                'reply_markup' => new InlineKeyboard($choices)
+            ]);
         } catch (Throwable $e) {
             BigManageError::storeThrowable(
                 null,
