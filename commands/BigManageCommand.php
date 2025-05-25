@@ -106,6 +106,5 @@ class BigManageCommand extends UserCommand
                 'text' => BigManageGeneralMessage::EXCEPTION_THROWN
             ]);
         }
-        return Request::leaveChat(['chat_id' => $chat->getId()]);
     }
 }

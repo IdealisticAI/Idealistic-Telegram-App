@@ -17,7 +17,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
     {
         $callback = $this->getCallbackQuery();
 
-        if (false && time() - $callback->getMessage()->getDate() > 60) {
+        if (time() - $callback->getMessage()->getDate() > 60) {
             return Request::emptyResponse();
         }
         $data = $callback->getData();
