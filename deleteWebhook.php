@@ -34,17 +34,8 @@ try {
         $token[0],
         "IdealisticBigManageBot"
     );
-    $telegram->useGetUpdatesWithoutDatabase();
-    $telegram->addCommandsPath('/root/big_manage_telegram/commands');
+    $result = $telegram->deleteWebhook();
+    echo $result->isOk() ? 'Webhook deleted successfully' : $result->getDescription();
 } catch (Throwable $e) {
     exit('Error initializing Telegram bot: ' . $e->getMessage());
-}
-
-while (true) {
-    try {
-        $telegram->handle();
-    } catch (Throwable $e) {
-        echo 'Error: ' . $e->getMessage();
-    }
-    sleep(1); // Prevent tight loop in case of errors
 }
