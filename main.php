@@ -47,15 +47,19 @@ $lastUpdateId = 0;
 
 while (true) {
     $response = Request::getUpdates([
-        'offset'  => $lastUpdateId + 1,
-        'timeout' => 5,
+        'offset' => $lastUpdateId + 1,
+        'timeout' => 5
     ]);
 
     if ($response->isOk()) {
-        foreach ($response->getResult() as $update) {
-            $telegram->setCustomInput(json_encode($update));
-            $telegram->handle();
-            $lastUpdateId = $update->getUpdateId();
+        try {
+            foreach ($response->getResult() as $update) {
+                $telegram->setCustomInput(json_encode($update));
+                $telegram->handle();
+                $lastUpdateId = $update->getUpdateId();
+            }
+        } catch (Throwable $e) {
+            exit('Error handling update: ' . $e->getMessage());
         }
     }
     sleep(1);
