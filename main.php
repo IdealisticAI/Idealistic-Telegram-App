@@ -17,6 +17,7 @@ require '/root/big_manage_telegram/utilities/evaluator.php';
 
 use Longman\TelegramBot\Request;
 use Longman\TelegramBot\Telegram;
+use React\EventLoop\Loop;
 
 $files = evaluator::run(
     array(
@@ -43,9 +44,10 @@ try {
 
 // Separator
 
+$loop = Loop::get();
 $lastUpdateId = 0;
 
-while (true) {
+$loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
     $response = Request::getUpdates([
         'offset' => $lastUpdateId + 1,
         'timeout' => 5
@@ -62,5 +64,6 @@ while (true) {
             exit('Error handling update: ' . $e->getMessage());
         }
     }
-    sleep(1);
-}
+});
+
+$loop->run();
