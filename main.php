@@ -46,7 +46,7 @@ try {
 
 class TelegramBotHandler
 {
-
+    public static $queue = array();
 }
 
 $loop = Loop::get();
