@@ -15,6 +15,7 @@ require '/root/big_manage_telegram/utilities/sql.php';
 require '/root/big_manage_telegram/utilities/communication.php';
 require '/root/big_manage_telegram/utilities/evaluator.php';
 
+use Longman\TelegramBot\Request;
 use Longman\TelegramBot\Telegram;
 
 $files = evaluator::run(
@@ -40,11 +41,22 @@ try {
     exit('Error initializing Telegram bot: ' . $e->getMessage());
 }
 
+// Separator
+
+$lastUpdateId = 0;
+
 while (true) {
-    try {
-        $telegram->handle();
-    } catch (Throwable $e) {
-        echo 'Error: ' . $e->getMessage();
+    $response = Request::getUpdates([
+        'offset'  => $lastUpdateId + 1,
+        'timeout' => 5,
+    ]);
+
+    if ($response->isOk()) {
+        foreach ($response->getResult() as $update) {
+            $telegram->setCustomInput(json_encode($update));
+            $telegram->handle();
+            $lastUpdateId = $update->getUpdateId();
+        }
     }
-    sleep(1); // Prevent tight loop in case of errors
+    sleep(1);
 }
