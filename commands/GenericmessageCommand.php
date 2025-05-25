@@ -13,6 +13,7 @@ use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
+use stdClass;
 use TelegramBotHandler;
 
 class GenericmessageCommand extends SystemCommand
@@ -91,36 +92,38 @@ class GenericmessageCommand extends SystemCommand
             }
             $attachments = array();
 
-            foreach ($message-> as $attachment) {
-                $contents = @file_get_contents($attachment->url);
+            if (false) {
+                foreach ($message->getPhoto() as $photoSize) {
+                    $contents = @file_get_contents($photoSize);
 
-                if ($contents === false) {
-                    $contents = @file_get_contents($attachment->proxy_url);
-                }
-                if ($contents === false) {
-                    return Request::editMessageText([
-                        'chat_id' => $chat->getId(),
-                        'message_id' => $newMessage->getMessageId(),
-                        'text' => BigManageStrings::translateMessage(
-                            BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
-                            $user
-                        )
-                    ]);
-                } else {
-                    $attachments[] = new BigManageAttachment(
-                        null,
-                        $attachment->filename,
-                        $attachment->description,
-                        $attachment->content_type,
-                        $attachment->url ?? $attachment->proxy_url,
-                        $attachment->size,
-                        $attachment->width,
-                        $attachment->height,
-                        null,
-                        base64_encode($contents),
-                        null,
-                        true
-                    );
+                    if ($contents === false) {
+                        $contents = @file_get_contents($attachment->proxy_url);
+                    }
+                    if ($contents === false) {
+                        return Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]);
+                    } else {
+                        $attachments[] = new BigManageAttachment(
+                            null,
+                            $attachment->filename,
+                            $attachment->description,
+                            $attachment->content_type,
+                            $attachment->url ?? $attachment->proxy_url,
+                            $attachment->size,
+                            $attachment->width,
+                            $attachment->height,
+                            null,
+                            base64_encode($contents),
+                            null,
+                            true
+                        );
+                    }
                 }
             }
             $repliedMessage = $message->getReplyToMessage();

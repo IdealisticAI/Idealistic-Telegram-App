@@ -46,7 +46,7 @@ try {
 
 class TelegramBotHandler
 {
-    public static $queue = array();
+    public static array $queue = array();
 }
 
 $loop = Loop::get();
@@ -70,5 +70,19 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
         }
     }
 });
+
+$loop->addPeriodicTimer(
+    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    function () {
+        // todo notifications
+    }
+);
+
+$loop->addPeriodicTimer(
+    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    function () {
+        // todo replies
+    }
+);
 
 $loop->run();
