@@ -106,7 +106,7 @@ $loop->addPeriodicTimer(
                             $data = $notification->isBase64()
                                 ? base64_decode($notification->getAttachmentContent())
                                 : $notification->getAttachmentContent();
-                            $tempPath = tempnam(sys_get_temp_dir(), 'tg_');
+                            $tempPath = sys_get_temp_dir() . "/" . $notification->getAttachmentName();
                             file_put_contents($tempPath, $data);
                             $file = Request::encodeFile($tempPath);
                             $data = [
@@ -268,7 +268,7 @@ $loop->addPeriodicTimer(
                             if (!($attachment instanceof BigManageAttachment)) {
                                 continue;
                             }
-                            $tempPath = tempnam(sys_get_temp_dir(), 'tg_');
+                            $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
                             file_put_contents($tempPath, $attachment->getDecodedData());
                             $file = Request::encodeFile($tempPath);
                             $data = [
