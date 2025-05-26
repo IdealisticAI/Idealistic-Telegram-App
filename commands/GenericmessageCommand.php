@@ -12,6 +12,7 @@ use BigManageStrings;
 use BigManageTeam;
 use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
+use Longman\TelegramBot\Entities\PhotoSize;
 use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
 use stdClass;
@@ -101,47 +102,64 @@ class GenericmessageCommand extends SystemCommand
                 }
                 $attachments = array();
 
-                if (false) {
-                    foreach ($message->getPhoto() as $photoSize) {
-                        $contents = @file_get_contents($photoSize);
+                $photoSize = $message->getPhoto();
+                $photoSize = array_pop($photoSize);
 
-                        if ($contents === false) {
-                            $contents = @file_get_contents($attachment->proxy_url);
-                        }
-                        if ($contents === false) {
-                            return Request::editMessageText([
-                                'chat_id' => $chat->getId(),
-                                'message_id' => $newMessage->getMessageId(),
-                                'text' => BigManageStrings::translateMessage(
-                                    BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
-                                    $user
-                                )
-                            ]);
-                        } else {
-                            $attachments[] = new BigManageAttachment(
-                                null,
-                                $attachment->filename,
-                                $attachment->description,
-                                $attachment->content_type,
-                                $attachment->url ?? $attachment->proxy_url,
-                                $attachment->size,
-                                $attachment->width,
-                                $attachment->height,
-                                null,
-                                base64_encode($contents),
-                                null,
-                                true
-                            );
-                        }
+                if ($photoSize instanceof PhotoSize) {
+                    $fileID = $photoSize->getFileId();
+                    $response = Request::getFile(['file_id' => $fileID]);
+
+                    if (!$response->isOk()) {
+                        return Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]);
+                    }
+                    global $token;
+                    $contents = @file_get_contents(
+                        "https://api.telegram.org/file/bot"
+                        . $token[0] . "/" . $response->getResult()->getFilePath()
+                    );
+
+                    if ($contents === false) {
+                        return Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]);
+                    } else {
+                        $attachments[] = new BigManageAttachment(
+                            null,
+                            $fileID,
+                            null,
+                            "image/jpeg",
+                            null,
+                            $photoSize->getFileSize(),
+                            $photoSize->getWidth(),
+                            $photoSize->getHeight(),
+                            null,
+                            base64_encode($contents),
+                            null,
+                            true
+                        );
                     }
                 }
+                //$voice = $message->getVoice();
                 $repliedMessage = $message->getReplyToMessage();
 
-                if ($repliedMessage === null) {
-                    $content = $message->getText();
+                if ($repliedMessage === null
+                    || $repliedMessage->getText() === null) {
+                    $content = $message->getText() ?? $message->getCaption();
                 } else {
                     $object = new stdClass();
-                    $object->content = $message->getText();
+                    $object->content = $message->getText() ?? $message->getCaption();
                     $object->referenced_message = $repliedMessage->getText();
                     $content = json_encode($object);
                 }
@@ -175,11 +193,19 @@ class GenericmessageCommand extends SystemCommand
                 null,
                 $e
             );
-            return Request::sendMessage([
-                "chat_id" => $chat->getId(),
-                "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
-                "reply_to_message_id" => $message->getMessageId()
-            ]);
+            if (isset($newMessage)) {
+                return Request::editMessageText([
+                    'chat_id' => $chat->getId(),
+                    'message_id' => $newMessage->getMessageId(),
+                    'text' => BigManageGeneralMessage::EXCEPTION_THROWN
+                ]);
+            } else {
+                return Request::sendMessage([
+                    "chat_id" => $chat->getId(),
+                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                    "reply_to_message_id" => $message->getMessageId()
+                ]);
+            }
         }
     }
 }
