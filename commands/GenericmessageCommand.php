@@ -14,6 +14,7 @@ use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Entities\PhotoSize;
 use Longman\TelegramBot\Entities\ServerResponse;
+use Longman\TelegramBot\Entities\Voice;
 use Longman\TelegramBot\Request;
 use stdClass;
 use TelegramBotHandler;
@@ -94,14 +95,13 @@ class GenericmessageCommand extends SystemCommand
                 "reply_to_message_id" => $message->getMessageId()
             ]);
 
-            if ($request->isOk()) {
+            if (!$request->isOk()) {
                 $newMessage = $request->getResult();
 
                 if (!($newMessage instanceof Message)) {
                     return Request::emptyResponse();
                 }
                 $attachments = array();
-
                 $photoSize = $message->getPhoto();
                 $photoSize = array_pop($photoSize);
 
@@ -151,16 +151,62 @@ class GenericmessageCommand extends SystemCommand
                         );
                     }
                 }
-                //$voice = $message->getVoice();
+                $voice = $message->getVoice();
+
+                if ($voice instanceof Voice) {
+                    $fileID = $voice->getFileId();
+                    $response = Request::getFile(['file_id' => $fileID]);
+
+                    if (!$response->isOk()) {
+                        return Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]);
+                    }
+                    global $token;
+                    $contents = @file_get_contents(
+                        "https://api.telegram.org/file/bot"
+                        . $token[0] . "/" . $response->getResult()->getFilePath()
+                    );
+
+                    if ($contents === false) {
+                        return Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]);
+                    } else {
+                        $attachments[] = new BigManageAttachment(
+                            null,
+                            $fileID,
+                            null,
+                            "audio/ogg",
+                            null,
+                            $voice->getFileSize(),
+                            null,
+                            null,
+                            null,
+                            base64_encode($contents),
+                            null,
+                            true
+                        );
+                    }
+                }
                 $repliedMessage = $message->getReplyToMessage();
 
-                if ($repliedMessage === null
-                    || $repliedMessage->getText() === null) {
+                if ($repliedMessage === null) {
                     $content = $message->getText() ?? $message->getCaption();
                 } else {
                     $object = new stdClass();
                     $object->content = $message->getText() ?? $message->getCaption();
-                    $object->referenced_message = $repliedMessage->getText();
+                    $object->referenced_message = $repliedMessage->getText() ?? $repliedMessage->getCaption();
                     $content = json_encode($object);
                 }
                 $prompt = $user->createPrompt(
