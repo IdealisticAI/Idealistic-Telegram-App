@@ -75,7 +75,58 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        // todo notifications
+        if (true) {
+            return;
+        }
+        if (empty($discord->users->first())) {
+            return;
+        }
+        $notifications = BigManageNotifications::retrieve(BigManageAccessPlatform::DISCORD);
+
+        if (!empty($notifications)) {
+            foreach ($notifications as $notification) {
+                if (!($notification instanceof BigManageNotification)) {
+                    continue;
+                }
+                $identity = $notification->getUser()->getLastIdentity();
+
+                if ($identity === null
+                    || $identity->getPlatformID() !== BigManageAccessPlatform::DISCORD) {
+                    continue;
+                }
+                foreach ($discord->users as $user) {
+                    if (!($user instanceof User)) {
+                        continue;
+                    }
+                    if ($user->id === $identity->getPlatformUserID()) {
+                        if ($notification->process()) {
+                            if ($notification->getAttachmentName() !== null
+                                && $notification->getAttachmentContent() !== null
+                                || $notification->getMessage() !== null) {
+                                $builder = MessageBuilder::new();
+
+                                if ($notification->getMessage() !== null) {
+                                    $builder->setContent($notification->getMessage());
+                                }
+                                if ($notification->getAttachmentName() !== null
+                                    && $notification->getAttachmentContent() !== null) {
+                                    $builder->addFileFromContent(
+                                        $notification->getAttachmentName(),
+                                        $notification->isBase64()
+                                            ? base64_decode($notification->getAttachmentContent())
+                                            : $notification->getAttachmentContent()
+                                    );
+                                }
+                                $user->getPrivateChannel()->done(function ($channel) use ($notification, $builder) {
+                                    $channel->sendMessage($builder);
+                                });
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 );
 

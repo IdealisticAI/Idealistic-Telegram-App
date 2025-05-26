@@ -148,6 +148,7 @@ class GenericmessageCommand extends SystemCommand
                 $prompt = $user->createPrompt(
                     BigManageAccessPlatform::TELEGRAM,
                     $author->getId(),
+                    $chat->getId(),
                     $message->getMessageId(),
                     $author->getUsername(),
                     $author->getFirstName() . ' ' . $author->getLastName(),
