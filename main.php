@@ -69,6 +69,14 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
         } catch (Throwable $e) {
             exit('Error handling update: ' . $e->getMessage());
         }
+    } else {
+        $error = $response->getDescription();
+
+        if ($error) {
+            echo "Error handling response: $error\n";
+        } else {
+            echo "Unknown error occurred while handling response.\n";
+        }
     }
 });
 

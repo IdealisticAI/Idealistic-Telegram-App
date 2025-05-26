@@ -20,7 +20,7 @@ class BigManageCommand extends UserCommand
     protected $name = 'bigmanage';
     protected $description = 'Manage your access';
     protected $usage = '/bigmanage';
-    protected $version = '1.0.0';
+    protected $version = '1.0';
 
     public function execute(): ServerResponse
     {

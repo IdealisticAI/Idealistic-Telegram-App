@@ -24,7 +24,7 @@ class GenericmessageCommand extends SystemCommand
 {
     protected $name = 'genericmessage';
     protected $description = 'Handle any generic message';
-    protected $version = '1.0.0';
+    protected $version = '1.0';
 
     public function execute(): ServerResponse
     {
@@ -95,15 +95,23 @@ class GenericmessageCommand extends SystemCommand
                 "reply_to_message_id" => $message->getMessageId()
             ]);
 
-            if (!$request->isOk()) {
+            if ($request->isOk()) {
+                global $token;
                 $newMessage = $request->getResult();
 
                 if (!($newMessage instanceof Message)) {
-                    return Request::emptyResponse();
+                    return Request::sendMessage([
+                        "chat_id" => $chat->getId(),
+                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                        "reply_to_message_id" => $message->getMessageId()
+                    ]);
                 }
+                $content = null;
                 $attachments = array();
                 $photoSize = $message->getPhoto();
-                $photoSize = array_pop($photoSize);
+                $photoSize = is_array($photoSize)
+                    ? array_pop($photoSize)
+                    : null;
 
                 if ($photoSize instanceof PhotoSize) {
                     $fileID = $photoSize->getFileId();
@@ -119,7 +127,6 @@ class GenericmessageCommand extends SystemCommand
                             )
                         ]);
                     }
-                    global $token;
                     $contents = @file_get_contents(
                         "https://api.telegram.org/file/bot"
                         . $token[0] . "/" . $response->getResult()->getFilePath()
@@ -149,6 +156,7 @@ class GenericmessageCommand extends SystemCommand
                             null,
                             true
                         );
+                        $content = $message->getCaption();
                     }
                 }
                 $voice = $message->getVoice();
@@ -167,7 +175,6 @@ class GenericmessageCommand extends SystemCommand
                             )
                         ]);
                     }
-                    global $token;
                     $contents = @file_get_contents(
                         "https://api.telegram.org/file/bot"
                         . $token[0] . "/" . $response->getResult()->getFilePath()
@@ -201,11 +208,15 @@ class GenericmessageCommand extends SystemCommand
                 }
                 $repliedMessage = $message->getReplyToMessage();
 
-                if ($repliedMessage === null) {
-                    $content = $message->getText() ?? $message->getCaption();
+                if ($repliedMessage === null
+                    || $repliedMessage->getText() === null
+                    && $repliedMessage->getCaption() === null) {
+                    if ($content === null) {
+                        $content = $message->getText();
+                    }
                 } else {
                     $object = new stdClass();
-                    $object->content = $message->getText() ?? $message->getCaption();
+                    $object->content = $content ?? $message->getText();
                     $object->referenced_message = $repliedMessage->getText() ?? $repliedMessage->getCaption();
                     $content = json_encode($object);
                 }
@@ -215,8 +226,8 @@ class GenericmessageCommand extends SystemCommand
                     $chat->getId(),
                     $message->getMessageId(),
                     $author->getUsername(),
-                    $author->getFirstName() . ' ' . $author->getLastName(),
-                    $content,
+                    $author->getFirstName() . " " . $author->getLastName(),
+                    $content ?? "",
                     $attachments
                 );
 
