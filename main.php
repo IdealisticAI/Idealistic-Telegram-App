@@ -75,12 +75,6 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        if (true) {
-            return;
-        }
-        if (empty($discord->users->first())) {
-            return;
-        }
         $notifications = BigManageNotifications::retrieve(BigManageAccessPlatform::DISCORD);
 
         if (!empty($notifications)) {
@@ -91,38 +85,49 @@ $loop->addPeriodicTimer(
                 $identity = $notification->getUser()->getLastIdentity();
 
                 if ($identity === null
-                    || $identity->getPlatformID() !== BigManageAccessPlatform::DISCORD) {
+                    || $identity->getPlatformID() !== BigManageAccessPlatform::TELEGRAM) {
                     continue;
                 }
-                foreach ($discord->users as $user) {
-                    if (!($user instanceof User)) {
-                        continue;
-                    }
-                    if ($user->id === $identity->getPlatformUserID()) {
-                        if ($notification->process()) {
-                            if ($notification->getAttachmentName() !== null
-                                && $notification->getAttachmentContent() !== null
-                                || $notification->getMessage() !== null) {
-                                $builder = MessageBuilder::new();
+                if ($notification->process()) {
+                    if ($notification->getAttachmentName() !== null
+                        && $notification->getAttachmentContent() !== null
+                        || $notification->getMessage() !== null) {
+                        $chat_id = null;
 
-                                if ($notification->getMessage() !== null) {
-                                    $builder->setContent($notification->getMessage());
-                                }
-                                if ($notification->getAttachmentName() !== null
-                                    && $notification->getAttachmentContent() !== null) {
-                                    $builder->addFileFromContent(
-                                        $notification->getAttachmentName(),
-                                        $notification->isBase64()
-                                            ? base64_decode($notification->getAttachmentContent())
-                                            : $notification->getAttachmentContent()
-                                    );
-                                }
-                                $user->getPrivateChannel()->done(function ($channel) use ($notification, $builder) {
-                                    $channel->sendMessage($builder);
-                                });
+                        if ($notification->getAttachmentContent() === null) {
+                            Request::sendMessage([
+                                "chat_id" => $chat_id,
+                                "text" => $notification->getMessage()
+                            ]);
+                        } else {
+                            $data = $notification->isBase64()
+                                ? base64_decode($notification->getAttachmentContent())
+                                : $notification->getAttachmentContent();
+                            $tempPath = tempnam(sys_get_temp_dir(), 'tg_');
+                            file_put_contents($tempPath, $data);
+                            $file = Request::encodeFile($tempPath);
+                            $data = [
+                                "chat_id" => $chat_id,
+                            ];
+
+                            if ($notification->getMessage() !== null) {
+                                $data["caption"] = $notification->getMessage();
                             }
+                            if ($attachment->isImage()) {
+                                $data["photo"] = $file;
+                                Request::sendPhoto($data);
+                            } else if ($attachment->isAudio()) {
+                                $data["audio"] = $file;
+                                Request::sendAudio($data);
+                            } else if ($attachment->isVideo()) {
+                                $data["video"] = $file;
+                                Request::sendVideo($data);
+                            } else {
+                                $data["document"] = $file;
+                                Request::sendDocument($data);
+                            }
+                            unlink($tempPath);
                         }
-                        break;
                     }
                 }
             }
@@ -267,7 +272,7 @@ $loop->addPeriodicTimer(
                                 "chat_id" => $chat_id,
                             ];
 
-                            if (!empty($attachment->getAnalyzedDescription())) {
+                            if ($attachment->getAnalyzedDescription() !== null) {
                                 $data["caption"] = $attachment->getAnalyzedDescription();
                             }
                             if ($attachment->isImage()) {
