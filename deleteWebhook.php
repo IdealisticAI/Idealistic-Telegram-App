@@ -6,7 +6,7 @@ $token = get_keys_from_file(
 );
 
 if ($token === null) {
-    exit("No Discord token found");
+    exit("No Telegram token found");
 }
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';

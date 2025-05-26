@@ -75,7 +75,7 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        $notifications = BigManageNotifications::retrieve(BigManageAccessPlatform::DISCORD);
+        $notifications = BigManageNotifications::retrieve(BigManageAccessPlatform::TELEGRAM);
 
         if (!empty($notifications)) {
             foreach ($notifications as $notification) {
@@ -88,12 +88,15 @@ $loop->addPeriodicTimer(
                     || $identity->getPlatformID() !== BigManageAccessPlatform::TELEGRAM) {
                     continue;
                 }
+                $chat_id = $identity->getPlatformChatID();
+
+                if ($chat_id === null) {
+                    continue;
+                }
                 if ($notification->process()) {
                     if ($notification->getAttachmentName() !== null
                         && $notification->getAttachmentContent() !== null
                         || $notification->getMessage() !== null) {
-                        $chat_id = null;
-
                         if ($notification->getAttachmentContent() === null) {
                             Request::sendMessage([
                                 "chat_id" => $chat_id,
@@ -113,13 +116,13 @@ $loop->addPeriodicTimer(
                             if ($notification->getMessage() !== null) {
                                 $data["caption"] = $notification->getMessage();
                             }
-                            if ($attachment->isImage()) {
+                            if ($notification->isImage()) {
                                 $data["photo"] = $file;
                                 Request::sendPhoto($data);
-                            } else if ($attachment->isAudio()) {
+                            } else if ($notification->isAudio()) {
                                 $data["audio"] = $file;
                                 Request::sendAudio($data);
-                            } else if ($attachment->isVideo()) {
+                            } else if ($notification->isVideo()) {
                                 $data["video"] = $file;
                                 Request::sendVideo($data);
                             } else {
