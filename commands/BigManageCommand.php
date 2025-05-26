@@ -24,12 +24,13 @@ class BigManageCommand extends UserCommand
 
     public function execute(): ServerResponse
     {
-        $chat = $this->getMessage()->getChat();
+        $message = $this->getMessage();
+        $chat = $message->getChat();
 
-        if (!$chat->isPrivateChat()) {
-            return Request::leaveChat(['chat_id' => $chat->getId()]);
-        }
         try {
+            if (!$chat->isPrivateChat()) {
+                return Request::leaveChat(["chat_id" => $chat->getId()]);
+            }
             $author = $this->getMessage()->getFrom();
 
             if ($author === null
@@ -44,8 +45,9 @@ class BigManageCommand extends UserCommand
 
             if ($account === null) {
                 return Request::sendMessage([
-                    'chat_id' => $chat->getId(),
-                    'text' => BigManageGeneralMessage::NO_TELEGRAM_ACCOUNT_CORRELATION_FOUND
+                    "chat_id" => $chat->getId(),
+                    "text" => BigManageGeneralMessage::NO_TELEGRAM_ACCOUNT_CORRELATION_FOUND,
+                    "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
             $team = new BigManageTeam($account);
@@ -53,33 +55,37 @@ class BigManageCommand extends UserCommand
 
             if ($user instanceof BigManageOutcome) {
                 return Request::sendMessage([
-                    'chat_id' => $chat->getId(),
-                    'text' => $user->getTranslatedMessage($team)
+                    "chat_id" => $chat->getId(),
+                    "text" => $user->getTranslatedMessage($team),
+                    "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
                     return Request::sendMessage([
-                        'chat_id' => $chat->getId(),
-                        'text' => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
+                        "chat_id" => $chat->getId(),
+                        "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
+                        "reply_to_message_id" => $message->getMessageId()
                     ]);
                 } else if (sizeof($team->getAccesses()) === 1) {
                     return Request::sendMessage([
-                        'chat_id' => $chat->getId(),
-                        'text' => BigManageStrings::translateMessage(
+                        "chat_id" => $chat->getId(),
+                        "text" => BigManageStrings::translateMessage(
                             str_replace(
                                 "{title}",
                                 $team->getTitle(),
                                 BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
                             ),
                             $team
-                        )
+                        ),
+                        "reply_to_message_id" => $message->getMessageId()
                     ]);
                 }
             } else if (empty($team->getAccesses())) {
                 return Request::sendMessage([
-                    'chat_id' => $chat->getId(),
-                    'text' => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
+                    "chat_id" => $chat->getId(),
+                    "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
+                    "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
             $choices = array();
@@ -91,9 +97,10 @@ class BigManageCommand extends UserCommand
                 ];
             }
             return Request::sendMessage([
-                'chat_id' => $chat->getId(),
-                'text' => 'Please select an option:',
-                'reply_markup' => new InlineKeyboard($choices)
+                "chat_id" => $chat->getId(),
+                "text" => 'Please select an option:',
+                "reply_markup" => new InlineKeyboard($choices),
+                "reply_to_message_id" => $message->getMessageId()
             ]);
         } catch (Throwable $e) {
             BigManageError::storeThrowable(
@@ -102,8 +109,9 @@ class BigManageCommand extends UserCommand
                 $e
             );
             return Request::sendMessage([
-                'chat_id' => $chat->getId(),
-                'text' => BigManageGeneralMessage::EXCEPTION_THROWN
+                "chat_id" => $chat->getId(),
+                "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                "reply_to_message_id" => $message->getMessageId()
             ]);
         }
     }

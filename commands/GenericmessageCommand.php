@@ -5,6 +5,7 @@ namespace Longman\TelegramBot\Commands\SystemCommands;
 use Account;
 use BigManageAccessPlatform;
 use BigManageAttachment;
+use BigManageError;
 use BigManageGeneralMessage;
 use BigManageOutcome;
 use BigManageStrings;
@@ -15,6 +16,7 @@ use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
 use stdClass;
 use TelegramBotHandler;
+use Throwable;
 
 class GenericmessageCommand extends SystemCommand
 {
@@ -27,137 +29,156 @@ class GenericmessageCommand extends SystemCommand
         $message = $this->getMessage();
         $chat = $message->getChat();
 
-        if (!$chat->isPrivateChat()) {
-            return Request::leaveChat(["chat_id" => $chat->getId()]);
-        }
-        $author = $message->getFrom();
+        try {
+            if (!$chat->isPrivateChat()) {
+                return Request::leaveChat(["chat_id" => $chat->getId()]);
+            }
+            $author = $message->getFrom();
 
-        if ($author === null) {
-            return Request::sendMessage([
-                "chat_id" => $chat->getId(),
-                "text" => "No Telegram message author found."
-            ]);
-        }
-        if ($author->getId() === $this->getTelegram()->getBotId()) {
-            return Request::emptyResponse();
-        }
-        $account = new Account(Account::BIGMANAGE_APPLICATION_ID);
-        $account = $account->getAccounts()->getAccountFromType(
-            BigManageAccessPlatform::TELEGRAM,
-            $author->getUsername()
-        );
-
-        if ($account === null) {
-            return Request::sendMessage([
-                "chat_id" => $chat->getId(),
-                "text" => BigManageGeneralMessage::NO_TELEGRAM_ACCOUNT_CORRELATION_FOUND
-            ]);
-        }
-        $team = new BigManageTeam($account);
-
-        if (!$team->hasEstablishedAccess()) {
-            if (empty($team->getAccesses())) {
+            if ($author === null) {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND
-                ]);
-            } else {
-                return Request::sendMessage([
-                    "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::TELEGRAM_SELECT_TEAM_ACCESSES
+                    "text" => "No Telegram message author found.",
+                    "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-        }
-        $user = $team->findUser($account);
-
-        if ($user instanceof BigManageOutcome) {
-            return Request::sendMessage([
-                "chat_id" => $chat->getId(),
-                "text" => $user->getTranslatedMessage($team)
-            ]);
-        }
-        $request = Request::sendMessage([
-            'chat_id' => $chat->getId(),
-            'text' => BigManageStrings::translateMessage(
-                BigManageGeneralMessage::PROMPT_WAIT_RESPONSE,
-                $user
-            ),
-        ]);
-
-        if ($request->isOk()) {
-            $newMessage = $request->getResult();
-
-            if (!($newMessage instanceof Message)) {
+            if ($author->getId() === $this->getTelegram()->getBotId()) {
                 return Request::emptyResponse();
             }
-            $attachments = array();
-
-            if (false) {
-                foreach ($message->getPhoto() as $photoSize) {
-                    $contents = @file_get_contents($photoSize);
-
-                    if ($contents === false) {
-                        $contents = @file_get_contents($attachment->proxy_url);
-                    }
-                    if ($contents === false) {
-                        return Request::editMessageText([
-                            'chat_id' => $chat->getId(),
-                            'message_id' => $newMessage->getMessageId(),
-                            'text' => BigManageStrings::translateMessage(
-                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
-                                $user
-                            )
-                        ]);
-                    } else {
-                        $attachments[] = new BigManageAttachment(
-                            null,
-                            $attachment->filename,
-                            $attachment->description,
-                            $attachment->content_type,
-                            $attachment->url ?? $attachment->proxy_url,
-                            $attachment->size,
-                            $attachment->width,
-                            $attachment->height,
-                            null,
-                            base64_encode($contents),
-                            null,
-                            true
-                        );
-                    }
-                }
-            }
-            $repliedMessage = $message->getReplyToMessage();
-
-            if ($repliedMessage === null) {
-                $content = $message->getText();
-            } else {
-                $object = new stdClass();
-                $object->content = $message->getText();
-                $object->referenced_message = $repliedMessage->getText();
-                $content = json_encode($object);
-            }
-            $prompt = $user->createPrompt(
+            $account = new Account(Account::BIGMANAGE_APPLICATION_ID);
+            $account = $account->getAccounts()->getAccountFromType(
                 BigManageAccessPlatform::TELEGRAM,
-                $author->getId(),
-                $message->getMessageId(),
-                $author->getUsername(),
-                $author->getFirstName() . ' ' . $author->getLastName(),
-                $content,
-                $attachments
+                $author->getUsername()
             );
 
-            if ($prompt === null) {
-                return Request::editMessageText([
-                    'chat_id' => $chat->getId(),
-                    'message_id' => $newMessage->getMessageId(),
-                    'text' => BigManageStrings::translateMessage(
-                        BigManageGeneralMessage::EXCEPTION_THROWN,
-                        $user
-                    )
+            if ($account === null) {
+                return Request::sendMessage([
+                    "chat_id" => $chat->getId(),
+                    "text" => BigManageGeneralMessage::NO_TELEGRAM_ACCOUNT_CORRELATION_FOUND,
+                    "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-            TelegramBotHandler::$queue[$prompt] = array($user, $newMessage, time(), microtime(true));
+            $team = new BigManageTeam($account);
+
+            if (!$team->hasEstablishedAccess()) {
+                if (empty($team->getAccesses())) {
+                    return Request::sendMessage([
+                        "chat_id" => $chat->getId(),
+                        "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
+                        "reply_to_message_id" => $message->getMessageId()
+                    ]);
+                } else {
+                    return Request::sendMessage([
+                        "chat_id" => $chat->getId(),
+                        "text" => BigManageGeneralMessage::TELEGRAM_SELECT_TEAM_ACCESSES,
+                        "reply_to_message_id" => $message->getMessageId()
+                    ]);
+                }
+            }
+            $user = $team->findUser($account);
+
+            if ($user instanceof BigManageOutcome) {
+                return Request::sendMessage([
+                    "chat_id" => $chat->getId(),
+                    "text" => $user->getTranslatedMessage($team),
+                    "reply_to_message_id" => $message->getMessageId()
+                ]);
+            }
+            $request = Request::sendMessage([
+                "chat_id" => $chat->getId(),
+                "text" => BigManageStrings::translateMessage(
+                    BigManageGeneralMessage::PROMPT_WAIT_RESPONSE,
+                    $user
+                ),
+                "reply_to_message_id" => $message->getMessageId()
+            ]);
+
+            if ($request->isOk()) {
+                $newMessage = $request->getResult();
+
+                if (!($newMessage instanceof Message)) {
+                    return Request::emptyResponse();
+                }
+                $attachments = array();
+
+                if (false) {
+                    foreach ($message->getPhoto() as $photoSize) {
+                        $contents = @file_get_contents($photoSize);
+
+                        if ($contents === false) {
+                            $contents = @file_get_contents($attachment->proxy_url);
+                        }
+                        if ($contents === false) {
+                            return Request::editMessageText([
+                                'chat_id' => $chat->getId(),
+                                'message_id' => $newMessage->getMessageId(),
+                                'text' => BigManageStrings::translateMessage(
+                                    BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                    $user
+                                )
+                            ]);
+                        } else {
+                            $attachments[] = new BigManageAttachment(
+                                null,
+                                $attachment->filename,
+                                $attachment->description,
+                                $attachment->content_type,
+                                $attachment->url ?? $attachment->proxy_url,
+                                $attachment->size,
+                                $attachment->width,
+                                $attachment->height,
+                                null,
+                                base64_encode($contents),
+                                null,
+                                true
+                            );
+                        }
+                    }
+                }
+                $repliedMessage = $message->getReplyToMessage();
+
+                if ($repliedMessage === null) {
+                    $content = $message->getText();
+                } else {
+                    $object = new stdClass();
+                    $object->content = $message->getText();
+                    $object->referenced_message = $repliedMessage->getText();
+                    $content = json_encode($object);
+                }
+                $prompt = $user->createPrompt(
+                    BigManageAccessPlatform::TELEGRAM,
+                    $author->getId(),
+                    $message->getMessageId(),
+                    $author->getUsername(),
+                    $author->getFirstName() . ' ' . $author->getLastName(),
+                    $content,
+                    $attachments
+                );
+
+                if ($prompt === null) {
+                    return Request::editMessageText([
+                        'chat_id' => $chat->getId(),
+                        'message_id' => $newMessage->getMessageId(),
+                        'text' => BigManageStrings::translateMessage(
+                            BigManageGeneralMessage::EXCEPTION_THROWN,
+                            $user
+                        )
+                    ]);
+                }
+                TelegramBotHandler::$queue[$prompt] = array($user, $newMessage, time(), microtime(true));
+            }
+            return $request;
+        } catch (Throwable $e) {
+            BigManageError::storeThrowable(
+                null,
+                null,
+                $e
+            );
+            return Request::sendMessage([
+                "chat_id" => $chat->getId(),
+                "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                "reply_to_message_id" => $message->getMessageId()
+            ]);
         }
-        return $request;
     }
 }
