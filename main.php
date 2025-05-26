@@ -100,6 +100,8 @@ $loop->addPeriodicTimer(
                 ]);
                 continue;
             }
+            $chat_id = $message->getChat()->getId();
+
             try {
                 $prompt = $user->getPrompt($promptID);
 
@@ -113,7 +115,7 @@ $loop->addPeriodicTimer(
                     if (!$processing) {
                         unset(TelegramBotHandler::$queue[$promptID]);
                         Request::editMessageText([
-                            "chat_id" => $message->getChat()->getId(),
+                            "chat_id" => $chat_id,
                             "message_id" => $message->getMessageId(),
                             "text" => BigManageGeneralMessage::EXCEPTION_THROWN
                         ]);
@@ -187,7 +189,7 @@ $loop->addPeriodicTimer(
                     }
                 }
                 Request::editMessageText([
-                    "chat_id" => $message->getChat()->getId(),
+                    "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
                     "text" => array_shift($pieces)
                 ]);
@@ -195,28 +197,43 @@ $loop->addPeriodicTimer(
                 if (!empty($pieces)) {
                     foreach ($pieces as $piece) {
                         Request::sendMessage([
-                            "chat_id" => $message->getChat()->getId(),
-                            "text" => $piece
+                            "chat_id" => $chat_id,
+                            "text" => $piece,
+                            "reply_to_message_id" => $message->getMessageId()
                         ]);
                     }
                 }
                 if (!empty($messageAttachments)) {
                     foreach ($messageAttachments as $attachments) {
-                        $builder = MessageBuilder::new();
-
                         foreach ($attachments as $attachment) {
                             if (!($attachment instanceof BigManageAttachment)) {
                                 continue;
                             }
-                            $builder->addFileFromContent(
-                                $attachment->getName()
-                                . ($attachment->nameHasFormat()
-                                    ? ""
-                                    : "." . $attachment->getSimpleFormat()),
-                                $attachment->getDecodedData()
-                            );
+                            $tempPath = tempnam(sys_get_temp_dir(), 'tg_');
+                            file_put_contents($tempPath, $attachment->getDecodedData());
+                            $file = Request::encodeFile($tempPath);
+                            $data = [
+                                "chat_id" => $chat_id,
+                            ];
+
+                            if (!empty($attachment->getAnalyzedDescription())) {
+                                $data["caption"] = $attachment->getAnalyzedDescription();
+                            }
+                            if ($attachment->isImage()) {
+                                $data["photo"] = $file;
+                                Request::sendPhoto($data);
+                            } else if ($attachment->isAudio()) {
+                                $data["audio"] = $file;
+                                Request::sendAudio($data);
+                            } else if ($attachment->isVideo()) {
+                                $data["video"] = $file;
+                                Request::sendVideo($data);
+                            } else {
+                                $data["document"] = $file;
+                                Request::sendDocument($data);
+                            }
+                            unlink($tempPath);
                         }
-                        $message->reply($builder);
                     }
                 }
             } catch (Throwable $e) {
@@ -226,7 +243,7 @@ $loop->addPeriodicTimer(
                     $e
                 );
                 Request::editMessageText([
-                    "chat_id" => $message->getChat()->getId(),
+                    "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
                     "text" => BigManageGeneralMessage::EXCEPTION_THROWN
                 ]);
