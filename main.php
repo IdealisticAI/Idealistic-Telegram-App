@@ -197,9 +197,6 @@ $loop->addPeriodicTimer(
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
                 }
-                $byteCount = array();
-                $messageAttachments = array();
-                $lastMessage = 0;
                 $pieces = array();
 
                 foreach ($replies as $reply) {
@@ -214,47 +211,10 @@ $loop->addPeriodicTimer(
                         )
                     );
                 }
-                foreach ($pieces as $key => $piece) {
-                    $byteCount[$key] = strlen($piece);
-                }
                 $attachments = array_merge(
                     $prompt->getCreatedAttachments(),
                     $prompt->getRequestedAttachments(false)
                 );
-
-                if (!empty($attachments)) {
-                    $byteLimit = floor(BigManageLimit::ATTACHMENT_BYTES_LIMIT[BigManageAccessPlatform::TELEGRAM] * 0.99);
-
-                    foreach ($attachments as $attachment) {
-                        if (!($attachment instanceof BigManageAttachment)) {
-                            continue;
-                        }
-                        $fullBytes = $attachment->getFullBytes();
-
-                        if ($attachment->getName() !== null
-                            && $fullBytes <= $byteLimit
-                            && ($attachment->nameHasFormat()
-                                || $attachment->getSimpleFormat() !== null)) {
-                            $data = $attachment->getDecodedData();
-
-                            if ($data !== null) {
-                                if (($byteCount[$lastMessage] ?? 0) + $fullBytes > $byteLimit) {
-                                    $lastMessage++;
-                                }
-                                if (array_key_exists($lastMessage, $byteCount)) {
-                                    $byteCount[$lastMessage] += $fullBytes;
-                                } else {
-                                    $byteCount[$lastMessage] = $fullBytes;
-                                }
-                                if (array_key_exists($lastMessage, $messageAttachments)) {
-                                    $messageAttachments[$lastMessage][] = $attachment;
-                                } else {
-                                    $messageAttachments[$lastMessage] = array($attachment);
-                                }
-                            }
-                        }
-                    }
-                }
                 Request::editMessageText([
                     "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
@@ -270,37 +230,36 @@ $loop->addPeriodicTimer(
                         ]);
                     }
                 }
-                if (!empty($messageAttachments)) {
-                    foreach ($messageAttachments as $attachments) {
-                        foreach ($attachments as $attachment) {
-                            if (!($attachment instanceof BigManageAttachment)) {
-                                continue;
-                            }
-                            $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
-                            file_put_contents($tempPath, $attachment->getDecodedData());
-                            $file = Request::encodeFile($tempPath);
-                            $data = [
-                                "chat_id" => $chat_id,
-                            ];
-
-                            if ($attachment->getAnalyzedDescription() !== null) {
-                                $data["caption"] = $attachment->getAnalyzedDescription();
-                            }
-                            if ($attachment->isImage()) {
-                                $data["photo"] = $file;
-                                Request::sendPhoto($data);
-                            } else if ($attachment->isAudio()) {
-                                $data["audio"] = $file;
-                                Request::sendAudio($data);
-                            } else if ($attachment->isVideo()) {
-                                $data["video"] = $file;
-                                Request::sendVideo($data);
-                            } else {
-                                $data["document"] = $file;
-                                Request::sendDocument($data);
-                            }
-                            unlink($tempPath);
+                if (!empty($attachments)) {
+                    foreach ($attachments as $attachment) {
+                        if (!($attachment instanceof BigManageAttachment)
+                            || $attachment->getBytes() > BigManageLimit::ATTACHMENT_BYTES_LIMIT[BigManageAccessPlatform::TELEGRAM]) {
+                            continue;
                         }
+                        $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
+                        file_put_contents($tempPath, $attachment->getDecodedData());
+                        $file = Request::encodeFile($tempPath);
+                        $data = [
+                            "chat_id" => $chat_id,
+                        ];
+
+                        if ($attachment->getAnalyzedDescription() !== null) {
+                            $data["caption"] = $attachment->getAnalyzedDescription();
+                        }
+                        if ($attachment->isImage()) {
+                            $data["photo"] = $file;
+                            Request::sendPhoto($data);
+                        } else if ($attachment->isAudio()) {
+                            $data["audio"] = $file;
+                            Request::sendAudio($data);
+                        } else if ($attachment->isVideo()) {
+                            $data["video"] = $file;
+                            Request::sendVideo($data);
+                        } else {
+                            $data["document"] = $file;
+                            Request::sendDocument($data);
+                        }
+                        unlink($tempPath);
                     }
                 }
             } catch (Throwable $e) {
