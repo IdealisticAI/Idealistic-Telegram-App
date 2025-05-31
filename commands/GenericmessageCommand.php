@@ -7,9 +7,10 @@ use BigManageAccessPlatform;
 use BigManageAttachment;
 use BigManageError;
 use BigManageGeneralMessage;
-use BigManageOutcome;
 use BigManageStrings;
 use BigManageTeam;
+use BigManageTeamInitiator;
+use BigManageUser;
 use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Entities\PhotoSize;
@@ -77,14 +78,14 @@ class GenericmessageCommand extends SystemCommand
                     ]);
                 }
             }
-            $user = $team->findUser($account);
+            $user = BigManageTeamInitiator::findUser(
+                BigManageAccessPlatform::TELEGRAM,
+                $author->getId(),
+                $author->getUsername()
+            );
 
-            if ($user instanceof BigManageOutcome) {
-                return Request::sendMessage([
-                    "chat_id" => $chat->getId(),
-                    "text" => $user->getTranslatedMessage($team),
-                    "reply_to_message_id" => $message->getMessageId()
-                ]);
+            if (!($user instanceof BigManageUser)) {
+                $user = null;
             }
             $request = Request::sendMessage([
                 "chat_id" => $chat->getId(),
@@ -220,7 +221,8 @@ class GenericmessageCommand extends SystemCommand
                     $object->referenced_message = $repliedMessage->getText() ?? $repliedMessage->getCaption();
                     $content = json_encode($object);
                 }
-                $prompt = $user->createPrompt(
+                $prompt = BigManageTeamInitiator::createPrompt(
+                    $user,
                     BigManageAccessPlatform::TELEGRAM,
                     $author->getId(),
                     $chat->getId(),
@@ -231,7 +233,7 @@ class GenericmessageCommand extends SystemCommand
                     $attachments
                 );
 
-                if ($prompt === null) {
+                if (!$prompt->isPositiveOutcome()) {
                     return Request::editMessageText([
                         'chat_id' => $chat->getId(),
                         'message_id' => $newMessage->getMessageId(),
@@ -241,7 +243,7 @@ class GenericmessageCommand extends SystemCommand
                         )
                     ]);
                 }
-                TelegramBotHandler::$queue[$prompt] = array($user, $newMessage, time(), microtime(true));
+                TelegramBotHandler::$queue[$prompt->getRawMessage()] = array($user, $newMessage, time(), microtime(true));
             }
             return $request;
         } catch (Throwable $e) {
