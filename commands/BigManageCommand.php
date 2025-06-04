@@ -110,7 +110,7 @@ class BigManageCommand extends UserCommand
             );
             return Request::sendMessage([
                 "chat_id" => $chat->getId(),
-                "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#183047592)",
                 "reply_to_message_id" => $message->getMessageId()
             ]);
         }

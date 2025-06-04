@@ -103,7 +103,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
             );
             return Request::sendMessage([
                 "chat_id" => $chat_id,
-                "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#594301827)",
                 "reply_to_message_id" => $message->getMessageId()
             ]);
         }

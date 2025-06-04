@@ -103,7 +103,7 @@ class GenericmessageCommand extends SystemCommand
                 if (!($newMessage instanceof Message)) {
                     return Request::sendMessage([
                         "chat_id" => $chat->getId(),
-                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#748291603)",
                         "reply_to_message_id" => $message->getMessageId()
                     ]);
                 }
@@ -238,7 +238,7 @@ class GenericmessageCommand extends SystemCommand
                         'chat_id' => $chat->getId(),
                         'message_id' => $newMessage->getMessageId(),
                         'text' => BigManageStrings::translateMessage(
-                            BigManageGeneralMessage::EXCEPTION_THROWN,
+                            BigManageGeneralMessage::EXCEPTION_THROWN . " (#102938475)",
                             $user
                         )
                     ]);
@@ -256,12 +256,12 @@ class GenericmessageCommand extends SystemCommand
                 return Request::editMessageText([
                     'chat_id' => $chat->getId(),
                     'message_id' => $newMessage->getMessageId(),
-                    'text' => BigManageGeneralMessage::EXCEPTION_THROWN
+                    'text' => BigManageGeneralMessage::EXCEPTION_THROWN . " (#365910472)"
                 ]);
             } else {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN,
+                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#837294105)",
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
