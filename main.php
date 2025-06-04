@@ -163,7 +163,7 @@ $loop->addPeriodicTimer(
                 Request::editMessageText([
                     "chat_id" => $message->getChat()->getId(),
                     "message_id" => $message->getMessageId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN
+                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
                 ]);
                 continue;
             }
@@ -184,7 +184,7 @@ $loop->addPeriodicTimer(
                         Request::editMessageText([
                             "chat_id" => $chat_id,
                             "message_id" => $message->getMessageId(),
-                            "text" => BigManageGeneralMessage::EXCEPTION_THROWN
+                            "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#806493217)"
                         ]);
                     }
                     continue;
@@ -271,7 +271,7 @@ $loop->addPeriodicTimer(
                 Request::editMessageText([
                     "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN
+                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#582013947)"
                 ]);
             }
         }
