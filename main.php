@@ -177,8 +177,10 @@ $loop->addPeriodicTimer(
                 }
                 $processing = $prompt->isProcessing();
                 $replies = $prompt->getReplies();
+                $hasReplies = !empty($replies);
 
-                if (empty($replies)) {
+                if (!$hasReplies
+                    && !$prompt->sentNotification()) {
                     if (!$processing) {
                         unset(TelegramBotHandler::$queue[$promptID]);
                         Request::editMessageText([
@@ -199,37 +201,43 @@ $loop->addPeriodicTimer(
                 }
                 $pieces = array();
 
-                foreach ($replies as $reply) {
-                    if (!($reply instanceof BigManageHistoryReply)) {
-                        continue;
+                if ($hasReplies) {
+                    foreach ($replies as $reply) {
+                        if (!($reply instanceof BigManageHistoryReply)) {
+                            continue;
+                        }
+                        $pieces = array_merge(
+                            $pieces,
+                            str_split(
+                                $reply->getAnswer(),
+                                BigManageLimit::MESSAGE_CHARACTER_LIMIT[BigManageAccessPlatform::TELEGRAM]
+                            )
+                        );
                     }
-                    $pieces = array_merge(
-                        $pieces,
-                        str_split(
-                            $reply->getAnswer(),
-                            BigManageLimit::MESSAGE_CHARACTER_LIMIT[BigManageAccessPlatform::TELEGRAM]
-                        )
-                    );
+
+                    if (!empty($pieces)) {
+                        Request::editMessageText([
+                            "chat_id" => $chat_id,
+                            "message_id" => $message->getMessageId(),
+                            "text" => array_shift($pieces)
+                        ]);
+
+                        if (!empty($pieces)) {
+                            foreach ($pieces as $piece) {
+                                Request::sendMessage([
+                                    "chat_id" => $chat_id,
+                                    "text" => $piece,
+                                    "reply_to_message_id" => $message->getMessageId()
+                                ]);
+                            }
+                        }
+                    }
                 }
                 $attachments = array_merge(
                     $prompt->getCreatedAttachments(),
                     $prompt->getRequestedAttachments(false)
                 );
-                Request::editMessageText([
-                    "chat_id" => $chat_id,
-                    "message_id" => $message->getMessageId(),
-                    "text" => array_shift($pieces)
-                ]);
 
-                if (!empty($pieces)) {
-                    foreach ($pieces as $piece) {
-                        Request::sendMessage([
-                            "chat_id" => $chat_id,
-                            "text" => $piece,
-                            "reply_to_message_id" => $message->getMessageId()
-                        ]);
-                    }
-                }
                 if (!empty($attachments)) {
                     foreach ($attachments as $attachment) {
                         if (!($attachment instanceof BigManageAttachment)
