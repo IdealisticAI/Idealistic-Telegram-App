@@ -181,7 +181,6 @@ $loop->addPeriodicTimer(
                     if (microtime(true) < $updateCooldown) {
                         continue;
                     }
-                    TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
 
@@ -215,11 +214,13 @@ $loop->addPeriodicTimer(
                     }
 
                     if (!empty($pieces)) {
-                        Request::editMessageText([
+                        if (Request::editMessageText([
                             "chat_id" => $chat_id,
                             "message_id" => $message->getMessageId(),
                             "text" => array_shift($pieces)
-                        ]);
+                        ])->isOk()) {
+                            TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
+                        }
 
                         if (!empty($pieces)) {
                             foreach ($pieces as $piece) {
