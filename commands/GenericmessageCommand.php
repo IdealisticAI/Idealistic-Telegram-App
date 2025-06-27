@@ -2,15 +2,13 @@
 
 namespace Longman\TelegramBot\Commands\SystemCommands;
 
-use Account;
 use BigManageAccessPlatform;
 use BigManageAttachment;
 use BigManageError;
 use BigManageGeneralMessage;
+use BigManageOutcome;
 use BigManageStrings;
-use BigManageTeam;
 use BigManageTeamInitiator;
-use BigManageUser;
 use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Entities\PhotoSize;
@@ -48,44 +46,18 @@ class GenericmessageCommand extends SystemCommand
             if ($author->getId() === $this->getTelegram()->getBotId()) {
                 return Request::emptyResponse();
             }
-            $account = new Account(Account::BIGMANAGE_APPLICATION_ID);
-            $account = $account->getAccounts()->getAccountFromType(
-                BigManageAccessPlatform::TELEGRAM,
-                $author->getUsername()
-            );
-
-            if ($account === null) {
-                return Request::sendMessage([
-                    "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::NO_TELEGRAM_ACCOUNT_CORRELATION_FOUND,
-                    "reply_to_message_id" => $message->getMessageId()
-                ]);
-            }
-            $team = new BigManageTeam($account);
-
-            if (!$team->hasEstablishedAccess()) {
-                if (empty($team->getAccesses())) {
-                    return Request::sendMessage([
-                        "chat_id" => $chat->getId(),
-                        "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
-                        "reply_to_message_id" => $message->getMessageId()
-                    ]);
-                } else {
-                    return Request::sendMessage([
-                        "chat_id" => $chat->getId(),
-                        "text" => BigManageGeneralMessage::TELEGRAM_SELECT_TEAM_ACCESSES,
-                        "reply_to_message_id" => $message->getMessageId()
-                    ]);
-                }
-            }
             $user = BigManageTeamInitiator::findUser(
                 BigManageAccessPlatform::TELEGRAM,
                 $author->getId(),
                 $author->getUsername()
             );
 
-            if (!($user instanceof BigManageUser)) {
-                $user = null;
+            if ($user instanceof BigManageOutcome) {
+                return Request::sendMessage([
+                    "chat_id" => $chat->getId(),
+                    "text" => $user->getTranslatedMessage(),
+                    "reply_to_message_id" => $message->getMessageId()
+                ]);
             }
             $request = Request::sendMessage([
                 "chat_id" => $chat->getId(),
