@@ -64,7 +64,7 @@ class BigManageCommand extends UserCommand
                 if (empty($team->getAccesses())) {
                     return Request::sendMessage([
                         "chat_id" => $chat->getId(),
-                        "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
+                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#728395021)",
                         "reply_to_message_id" => $message->getMessageId()
                     ]);
                 } else if (sizeof($team->getAccesses()) === 1) {
@@ -84,7 +84,7 @@ class BigManageCommand extends UserCommand
             } else if (empty($team->getAccesses())) {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::NO_TEAM_ACCESSES_FOUND,
+                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#209148012)",
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
