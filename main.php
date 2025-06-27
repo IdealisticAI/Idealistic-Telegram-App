@@ -175,23 +175,7 @@ $loop->addPeriodicTimer(
                 if ($prompt === null) {
                     continue;
                 }
-                $processing = $prompt->isProcessing();
-                $replies = $prompt->getReplies();
-                $hasReplies = !empty($replies);
-
-                if (!$hasReplies
-                    && !$prompt->sentNotification()) {
-                    if (!$processing) {
-                        unset(TelegramBotHandler::$queue[$promptID]);
-                        Request::editMessageText([
-                            "chat_id" => $chat_id,
-                            "message_id" => $message->getMessageId(),
-                            "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#806493217)"
-                        ]);
-                    }
-                    continue;
-                }
-                if ($processing) {
+                if ($prompt->isProcessing()) {
                     if (microtime(true) < $updateCooldown) {
                         continue;
                     }
@@ -199,9 +183,10 @@ $loop->addPeriodicTimer(
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
                 }
+                $replies = $prompt->getReplies();
                 $pieces = array();
 
-                if ($hasReplies) {
+                if (!empty($replies)) {
                     foreach ($replies as $reply) {
                         if (!($reply instanceof BigManageHistoryReply)) {
                             continue;
