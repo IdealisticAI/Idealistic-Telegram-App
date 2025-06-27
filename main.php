@@ -175,6 +175,8 @@ $loop->addPeriodicTimer(
                 if ($prompt === null) {
                     continue;
                 }
+                $replies = $prompt->getReplies();
+
                 if ($prompt->isProcessing()) {
                     if (microtime(true) < $updateCooldown) {
                         continue;
@@ -182,8 +184,20 @@ $loop->addPeriodicTimer(
                     TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
+
+                    if (empty($replies)
+                        && !$prompt->sentNotification()) {
+                        Request::editMessageText([
+                            "chat_id" => $chat_id,
+                            "message_id" => $message->getMessageId(),
+                            "text" => BigManageStrings::translateMessage(
+                                BigManageGeneralMessage::EXCEPTION_THROWN . " (#910428913)",
+                                $user
+                            )
+                        ]);
+                        continue;
+                    }
                 }
-                $replies = $prompt->getReplies();
                 $pieces = array();
 
                 if (!empty($replies)) {
