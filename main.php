@@ -160,11 +160,14 @@ $loop->addPeriodicTimer(
                 || !is_int($time)
                 || !is_numeric($updateCooldown)) {
                 unset(TelegramBotHandler::$queue[$promptID]);
-                Request::editMessageText([
-                    "chat_id" => $message->getChat()->getId(),
-                    "message_id" => $message->getMessageId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
-                ]);
+
+                if ($message instanceof Message) {
+                    Request::editMessageText([
+                        "chat_id" => $message->getChat()->getId(),
+                        "message_id" => $message->getMessageId(),
+                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
+                    ]);
+                }
                 continue;
             }
             $chat_id = $message->getChat()->getId();
@@ -176,8 +179,9 @@ $loop->addPeriodicTimer(
                     continue;
                 }
                 $replies = $prompt->getReplies();
+                $processing = $prompt->isProcessing();
 
-                if ($prompt->isProcessing()) {
+                if ($processing) {
                     if (microtime(true) < $updateCooldown) {
                         continue;
                     }
@@ -215,14 +219,16 @@ $loop->addPeriodicTimer(
 
                     if (!empty($pieces)) {
                         if (Request::editMessageText([
-                            "chat_id" => $chat_id,
-                            "message_id" => $message->getMessageId(),
-                            "text" => array_shift($pieces)
-                        ])->isOk()) {
+                                "chat_id" => $chat_id,
+                                "message_id" => $message->getMessageId(),
+                                "text" => array_shift($pieces)
+                            ])->isOk()
+                            && $processing) {
                             TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
                         }
 
-                        if (!empty($pieces)) {
+                        if (!$processing
+                            && !empty($pieces)) {
                             foreach ($pieces as $piece) {
                                 Request::sendMessage([
                                     "chat_id" => $chat_id,
@@ -233,41 +239,43 @@ $loop->addPeriodicTimer(
                         }
                     }
                 }
-                $attachments = array_merge(
-                    $prompt->getCreatedAttachments(),
-                    $prompt->getRequestedAttachments(false)
-                );
+                if (!$processing) {
+                    $attachments = array_merge(
+                        $prompt->getCreatedAttachments(),
+                        $prompt->getRequestedAttachments(false)
+                    );
 
-                if (!empty($attachments)) {
-                    foreach ($attachments as $attachment) {
-                        if (!($attachment instanceof BigManageAttachment)
-                            || $attachment->getBytes() > BigManageLimit::ATTACHMENT_BYTES_LIMIT[BigManageAccessPlatform::TELEGRAM]) {
-                            continue;
-                        }
-                        $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
-                        file_put_contents($tempPath, $attachment->getDecodedData());
-                        $file = Request::encodeFile($tempPath);
-                        $data = [
-                            "chat_id" => $chat_id,
-                        ];
+                    if (!empty($attachments)) {
+                        foreach ($attachments as $attachment) {
+                            if (!($attachment instanceof BigManageAttachment)
+                                || $attachment->getBytes() > BigManageLimit::ATTACHMENT_BYTES_LIMIT[BigManageAccessPlatform::TELEGRAM]) {
+                                continue;
+                            }
+                            $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
+                            file_put_contents($tempPath, $attachment->getDecodedData());
+                            $file = Request::encodeFile($tempPath);
+                            $data = [
+                                "chat_id" => $chat_id,
+                            ];
 
-                        if ($attachment->getAnalyzedDescription() !== null) {
-                            $data["caption"] = $attachment->getAnalyzedDescription();
+                            if ($attachment->getAnalyzedDescription() !== null) {
+                                $data["caption"] = $attachment->getAnalyzedDescription();
+                            }
+                            if ($attachment->isImage()) {
+                                $data["photo"] = $file;
+                                Request::sendPhoto($data);
+                            } else if ($attachment->isAudio()) {
+                                $data["audio"] = $file;
+                                Request::sendAudio($data);
+                            } else if ($attachment->isVideo()) {
+                                $data["video"] = $file;
+                                Request::sendVideo($data);
+                            } else {
+                                $data["document"] = $file;
+                                Request::sendDocument($data);
+                            }
+                            unlink($tempPath);
                         }
-                        if ($attachment->isImage()) {
-                            $data["photo"] = $file;
-                            Request::sendPhoto($data);
-                        } else if ($attachment->isAudio()) {
-                            $data["audio"] = $file;
-                            Request::sendAudio($data);
-                        } else if ($attachment->isVideo()) {
-                            $data["video"] = $file;
-                            Request::sendVideo($data);
-                        } else {
-                            $data["document"] = $file;
-                            Request::sendDocument($data);
-                        }
-                        unlink($tempPath);
                     }
                 }
             } catch (Throwable $e) {
