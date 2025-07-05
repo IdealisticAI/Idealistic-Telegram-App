@@ -176,13 +176,12 @@ $loop->addPeriodicTimer(
                     continue;
                 }
                 $replies = $prompt->getReplies();
-                $processing = $prompt->isProcessing();
 
-                if ($processing) {
+                if ($prompt->isProcessing()) {
                     if (microtime(true) < $updateCooldown) {
                         continue;
                     }
-                } else if (time() - $time > BigManageLimit::HISTORY_REQUIRED_PROMPT_SECONDS_TIMEOUT) {
+                } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
 
                     if (empty($replies)
@@ -197,8 +196,6 @@ $loop->addPeriodicTimer(
                         ]);
                         continue;
                     }
-                } else if (microtime(true) < $updateCooldown) {
-                    continue;
                 }
                 $pieces = array();
 
@@ -223,10 +220,6 @@ $loop->addPeriodicTimer(
                             "text" => array_shift($pieces)
                         ])->isOk()) {
                             TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
-
-                            if (!$processing) {
-                                unset(TelegramBotHandler::$queue[$promptID]);
-                            }
                         }
 
                         if (!empty($pieces)) {
