@@ -63,7 +63,7 @@ class BigManageCommand extends UserCommand
                         "chat_id" => $chat->getId(),
                         "text" => BigManageStrings::translateMessage(
                             str_replace(
-                                "{title}",
+                                "{name}",
                                 $team->getTitle(),
                                 BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
                             ),
