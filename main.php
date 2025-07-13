@@ -190,15 +190,10 @@ $loop->addPeriodicTimer(
 
                     if (empty($replies)
                         && !$prompt->sentNotification()) {
-                        $error = BigManageStrings::translateMessage(
-                            BigManageGeneralMessage::EXCEPTION_THROWN . " (#910428913)",
-                            $user
-                        );
-                        $prompt->addFinalFailedReply($error);
                         Request::editMessageText([
                             "chat_id" => $chat_id,
                             "message_id" => $message->getMessageId(),
-                            "text" => $error
+                            "text" => $prompt->addFinalFailedReply()
                         ]);
                         continue;
                     }
