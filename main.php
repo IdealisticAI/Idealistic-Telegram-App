@@ -190,11 +190,15 @@ $loop->addPeriodicTimer(
 
                     if (empty($replies)
                         && !$prompt->sentNotification()) {
-                        Request::editMessageText([
-                            "chat_id" => $chat_id,
-                            "message_id" => $message->getMessageId(),
-                            "text" => $prompt->addFinalFailedReply()
-                        ]);
+                        $failedReply = $prompt->addFinalFailedReply();
+
+                        if ($failedReply !== null) {
+                            Request::editMessageText([
+                                "chat_id" => $chat_id,
+                                "message_id" => $message->getMessageId(),
+                                "text" => $failedReply
+                            ]);
+                        }
                         continue;
                     }
                 }
