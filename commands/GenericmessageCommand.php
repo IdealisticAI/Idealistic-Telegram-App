@@ -200,7 +200,7 @@ class GenericmessageCommand extends SystemCommand
                     $chat->getId(),
                     $message->getMessageId(),
                     $author->getUsername(),
-                    $author->getFirstName() . " " . $author->getLastName(),
+                    trim($author->getFirstName() . " " . $author->getLastName()),
                     $content ?? "",
                     $attachments
                 );
