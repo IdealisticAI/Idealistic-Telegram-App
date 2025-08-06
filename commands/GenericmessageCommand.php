@@ -201,6 +201,7 @@ class GenericmessageCommand extends SystemCommand
                     $message->getMessageId(),
                     $author->getUsername(),
                     trim($author->getFirstName() . " " . $author->getLastName()),
+                    null,
                     $content ?? "",
                     $attachments
                 );
