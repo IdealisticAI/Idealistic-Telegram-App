@@ -64,7 +64,7 @@ class BigManageCommand extends UserCommand
                         "text" => BigManageStrings::translateMessage(
                             str_replace(
                                 "{name}",
-                                $team->getTitle(),
+                                $team->getName(),
                                 BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
                             ),
                             $team
@@ -83,7 +83,7 @@ class BigManageCommand extends UserCommand
 
             foreach ($team->getAccesses() as $index => $teamAccess) {
                 $choices[] = [
-                    "text" => $teamAccess->getTitle(),
+                    "text" => $teamAccess->getName(),
                     "callback_data" => $index
                 ];
             }

@@ -62,7 +62,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                         "text" => BigManageStrings::translateMessage(
                             str_replace(
                                 "{name}",
-                                $team->getTitle(),
+                                $team->getName(),
                                 BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
                             ),
                             $team
