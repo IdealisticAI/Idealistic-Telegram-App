@@ -209,10 +209,7 @@ class GenericmessageCommand extends SystemCommand
                     return Request::editMessageText([
                         'chat_id' => $chat->getId(),
                         'message_id' => $newMessage->getMessageId(),
-                        'text' => BigManageStrings::translateMessage(
-                            BigManageGeneralMessage::EXCEPTION_THROWN . " (#102938475)",
-                            $user
-                        )
+                        'text' => $prompt->getTranslatedMessage($user)
                     ]);
                 }
                 TelegramBotHandler::$queue[$prompt->getRawMessage()] = array($user, $newMessage, time(), microtime(true));
