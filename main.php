@@ -10,7 +10,6 @@ if ($token === null) {
 }
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';
-
 require '/root/big_manage_telegram/utilities/sql.php';
 require '/root/big_manage_telegram/utilities/communication.php';
 require '/root/big_manage_telegram/utilities/evaluator.php';
