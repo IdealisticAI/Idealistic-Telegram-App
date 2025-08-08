@@ -187,8 +187,7 @@ $loop->addPeriodicTimer(
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
 
-                    if (empty($replies)
-                        && !$prompt->sentNotification()) {
+                    if (empty($replies)) {
                         $failedReply = $prompt->addFinalFailedReply();
 
                         if ($failedReply !== null) {
@@ -205,7 +204,8 @@ $loop->addPeriodicTimer(
 
                 if (!empty($replies)) {
                     foreach ($replies as $reply) {
-                        if (!($reply instanceof BigManageHistoryReply)) {
+                        if (!($reply instanceof BigManageHistoryReply)
+                            || $reply->sentNotification()) {
                             continue;
                         }
                         $pieces = array_merge(
