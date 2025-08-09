@@ -198,10 +198,10 @@ class GenericmessageCommand extends SystemCommand
                     BigManageAccessPlatform::TELEGRAM,
                     $author->getId(),
                     $chat->getId(),
+                    null,
                     $message->getMessageId(),
                     $author->getUsername(),
                     trim($author->getFirstName() . " " . $author->getLastName()),
-                    null,
                     $content ?? "",
                     $attachments
                 );
