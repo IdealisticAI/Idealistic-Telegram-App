@@ -169,6 +169,9 @@ $loop->addPeriodicTimer(
                 }
                 continue;
             }
+            if (microtime(true) < $updateCooldown) {
+                continue;
+            }
             $chat_id = $message->getChat()->getId();
 
             try {
@@ -180,9 +183,7 @@ $loop->addPeriodicTimer(
                 $processing = $prompt->isProcessing();
 
                 if ($processing) {
-                    if (microtime(true) < $updateCooldown) {
-                        continue;
-                    }
+                    $queue[$promptID][3] = microtime(true) + 0.5;
                     $replies = $prompt->getReplies();
                 } else {
                     $replies = $prompt->getReplies();
@@ -220,22 +221,18 @@ $loop->addPeriodicTimer(
 
                     if (!empty($pieces)) {
                         if (Request::editMessageText([
-                                "chat_id" => $chat_id,
-                                "message_id" => $message->getMessageId(),
-                                "text" => array_shift($pieces)
-                            ])->isOk()
-                            && $processing) {
-                            TelegramBotHandler::$queue[$promptID][3] = microtime(true) + 0.5;
-                        }
-
-                        if (!$processing
-                            && !empty($pieces)) {
-                            foreach ($pieces as $piece) {
-                                Request::sendMessage([
-                                    "chat_id" => $chat_id,
-                                    "text" => $piece,
-                                    "reply_to_message_id" => $message->getMessageId()
-                                ]);
+                            "chat_id" => $chat_id,
+                            "message_id" => $message->getMessageId(),
+                            "text" => array_shift($pieces)
+                        ])->isOk()) {
+                            if (!$processing) {
+                                foreach ($pieces as $piece) {
+                                    Request::sendMessage([
+                                        "chat_id" => $chat_id,
+                                        "text" => $piece,
+                                        "reply_to_message_id" => $message->getMessageId()
+                                    ]);
+                                }
                             }
                         }
                     }
