@@ -169,12 +169,11 @@ $loop->addPeriodicTimer(
                 }
                 continue;
             }
-            if (microtime(true) < $updateCooldown) {
-                continue;
-            }
-            $chat_id = $message->getChat()->getId();
-
             try {
+                if (microtime(true) < $updateCooldown) {
+                    continue;
+                }
+                $chat_id = $message->getChat()->getId();
                 $prompt = $user->getPrompt($promptID);
 
                 if ($prompt === null) {
