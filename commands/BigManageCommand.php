@@ -16,7 +16,7 @@ use Throwable;
 
 class BigManageCommand extends UserCommand
 {
-    protected $name = 'bigmanage';
+    protected $name = \BigManageVariable::APPLICATION_COMMAND;
     protected $description = 'Manage your access';
     protected $usage = '/bigmanage';
     protected $version = '1.0';
