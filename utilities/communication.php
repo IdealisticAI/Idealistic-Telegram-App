@@ -5,8 +5,6 @@ $private_connection_access = false;
 $current_sql_database = null;
 $previous_sql_database = null;
 
-//load_sql_database(); Moved to bot implementation
-
 class SqlDatabaseCredentials
 {
     public const
