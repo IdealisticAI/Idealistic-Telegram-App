@@ -20,7 +20,7 @@ class BigManageCommand extends UserCommand
     protected $description = 'Manage your access';
     protected $usage = '/bigmanage';
     protected $version = '1.0';
-    
+
     public function execute(): ServerResponse
     {
         $message = $this->getMessage();
@@ -75,7 +75,7 @@ class BigManageCommand extends UserCommand
             } else if (empty($team->getAccesses())) {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#209148012)",
+                    "text" => BigManageGeneralMessage::NO_ACCESS_TO_ESTABLISH,
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
