@@ -20,7 +20,7 @@ class BigManageCommand extends UserCommand
     protected $description = 'Manage your access';
     protected $usage = '/bigmanage';
     protected $version = '1.0';
-
+    
     public function execute(): ServerResponse
     {
         $message = $this->getMessage();
@@ -49,7 +49,7 @@ class BigManageCommand extends UserCommand
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-            $team = $user->getTeam();
+            $team = $user->getEvolvedTeam();
 
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {

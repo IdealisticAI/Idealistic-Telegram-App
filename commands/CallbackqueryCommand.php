@@ -48,7 +48,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-            $team = $user->getTeam();
+            $team = $user->getEvolvedTeam();
 
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
