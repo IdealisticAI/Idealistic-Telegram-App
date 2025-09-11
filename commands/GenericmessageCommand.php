@@ -7,6 +7,7 @@ use BigManageAttachment;
 use BigManageError;
 use BigManageGeneralMessage;
 use BigManageOutcome;
+use BigManageReader;
 use BigManageStrings;
 use BigManageTeamInitiator;
 use Longman\TelegramBot\Commands\SystemCommand;
@@ -115,6 +116,7 @@ class GenericmessageCommand extends SystemCommand
                             )
                         ]);
                     } else {
+                        $timezone = $user->getTimezone(false);
                         $attachments[] = new BigManageAttachment(
                             null,
                             $fileID,
@@ -127,7 +129,9 @@ class GenericmessageCommand extends SystemCommand
                             null,
                             base64_encode($contents),
                             null,
-                            true
+                            true,
+                            BigManageReader::getCurrentDate($timezone),
+                            $timezone->getCreationTimeZone()
                         );
                         $content = $message->getCaption();
                     }
@@ -163,6 +167,7 @@ class GenericmessageCommand extends SystemCommand
                             )
                         ]);
                     } else {
+                        $timezone = $user->getTimezone(false);
                         $attachments[] = new BigManageAttachment(
                             null,
                             $fileID,
@@ -175,7 +180,9 @@ class GenericmessageCommand extends SystemCommand
                             null,
                             base64_encode($contents),
                             null,
-                            true
+                            true,
+                            BigManageReader::getCurrentDate($timezone),
+                            $timezone->getCreationTimeZone()
                         );
                     }
                 }
