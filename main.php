@@ -169,11 +169,14 @@ $loop->addPeriodicTimer(
                 }
                 continue;
             }
+            $chat_id = $message->getChat()->getId();
+
             try {
-                if (microtime(true) < $updateCooldown) {
+                $microtime = microtime(true);
+
+                if ($microtime < $updateCooldown) {
                     continue;
                 }
-                $chat_id = $message->getChat()->getId();
                 $prompt = $user->getPrompt($promptID);
 
                 if ($prompt === null) {
@@ -182,7 +185,7 @@ $loop->addPeriodicTimer(
                 $processing = $prompt->isProcessing();
 
                 if ($processing) {
-                    $queue[$promptID][3] = microtime(true) + 0.5;
+                    $queue[$promptID][3] = $microtime + 0.5;
                     $replies = $prompt->getReplies();
                 } else {
                     $replies = $prompt->getReplies();
