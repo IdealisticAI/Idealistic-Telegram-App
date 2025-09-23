@@ -48,7 +48,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-            $team = $user->getEvolvedTeam();
+            $team = $user->getEvolvedTeam(false);
 
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
@@ -79,7 +79,8 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
             }
             $choice = $team->selectAccess(
                 $data,
-                $user->getAccount()
+                $user->getAccount(),
+                false
             );
             return Request::sendMessage([
                 "chat_id" => $chat_id,

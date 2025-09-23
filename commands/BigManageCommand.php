@@ -49,7 +49,7 @@ class BigManageCommand extends UserCommand
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
-            $team = $user->getEvolvedTeam();
+            $team = $user->getEvolvedTeam(false);
 
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
