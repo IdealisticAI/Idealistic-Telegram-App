@@ -131,7 +131,8 @@ class GenericmessageCommand extends SystemCommand
                             null,
                             true,
                             BigManageReader::getCurrentDate($timezone),
-                            $timezone->getCreationTimeZone()
+                            $timezone->getTimeZone(),
+                            $user
                         );
                         $content = $message->getCaption();
                     }
@@ -182,7 +183,8 @@ class GenericmessageCommand extends SystemCommand
                             null,
                             true,
                             BigManageReader::getCurrentDate($timezone),
-                            $timezone->getCreationTimeZone()
+                            $timezone->getTimeZone(),
+                            $user
                         );
                     }
                 }
