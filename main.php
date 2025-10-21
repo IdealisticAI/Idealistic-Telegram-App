@@ -97,44 +97,43 @@ $loop->addPeriodicTimer(
                 if ($chat_id === null) {
                     continue;
                 }
-                if ($notification->process()) {
-                    if ($notification->getAttachmentName() !== null
+                if ($notification->process()
+                    && ($notification->getAttachmentName() !== null
                         && $notification->getAttachmentContent() !== null
-                        || $notification->getMessage() !== null) {
-                        if ($notification->getAttachmentContent() === null) {
-                            Request::sendMessage([
-                                "chat_id" => $chat_id,
-                                "text" => $notification->getMessage()
-                            ]);
-                        } else {
-                            $data = $notification->isBase64()
-                                ? base64_decode($notification->getAttachmentContent())
-                                : $notification->getAttachmentContent();
-                            $tempPath = sys_get_temp_dir() . "/" . $notification->getAttachmentName();
-                            file_put_contents($tempPath, $data);
-                            $file = Request::encodeFile($tempPath);
-                            $data = [
-                                "chat_id" => $chat_id,
-                            ];
+                        || $notification->getMessage() !== null)) {
+                    if ($notification->getAttachmentContent() === null) {
+                        Request::sendMessage([
+                            "chat_id" => $chat_id,
+                            "text" => $notification->getMessage()
+                        ]);
+                    } else {
+                        $data = $notification->isBase64()
+                            ? base64_decode($notification->getAttachmentContent())
+                            : $notification->getAttachmentContent();
+                        $tempPath = sys_get_temp_dir() . "/" . $notification->getAttachmentName();
+                        file_put_contents($tempPath, $data);
+                        $file = Request::encodeFile($tempPath);
+                        $data = [
+                            "chat_id" => $chat_id,
+                        ];
 
-                            if ($notification->getMessage() !== null) {
-                                $data["caption"] = $notification->getMessage();
-                            }
-                            if ($notification->isImage()) {
-                                $data["photo"] = $file;
-                                Request::sendPhoto($data);
-                            } else if ($notification->isAudio()) {
-                                $data["audio"] = $file;
-                                Request::sendAudio($data);
-                            } else if ($notification->isVideo()) {
-                                $data["video"] = $file;
-                                Request::sendVideo($data);
-                            } else {
-                                $data["document"] = $file;
-                                Request::sendDocument($data);
-                            }
-                            unlink($tempPath);
+                        if ($notification->getMessage() !== null) {
+                            $data["caption"] = $notification->getMessage();
                         }
+                        if ($notification->isImage()) {
+                            $data["photo"] = $file;
+                            Request::sendPhoto($data);
+                        } else if ($notification->isAudio()) {
+                            $data["audio"] = $file;
+                            Request::sendAudio($data);
+                        } else if ($notification->isVideo()) {
+                            $data["video"] = $file;
+                            Request::sendVideo($data);
+                        } else {
+                            $data["document"] = $file;
+                            Request::sendDocument($data);
+                        }
+                        unlink($tempPath);
                     }
                 }
             }
