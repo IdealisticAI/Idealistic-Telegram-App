@@ -181,7 +181,7 @@ $loop->addPeriodicTimer(
                 $processing = $prompt->isProcessing();
 
                 if ($processing) {
-                    $queue[$promptID][3] = $microtime + (1.0 / 3.0);
+                    $queue[$promptID][3] = $microtime + 1;
                     $replies = $prompt->getReplies();
                 } else {
                     $replies = $prompt->getReplies();
