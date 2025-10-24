@@ -144,6 +144,13 @@ $loop->addPeriodicTimer(
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
+        // todo queued prompts
+    }
+);
+
+$loop->addPeriodicTimer(
+    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    function () {
         foreach (TelegramBotHandler::$queue as $promptID => $details) {
             $user = $details[0];
             $message = $details[1];
