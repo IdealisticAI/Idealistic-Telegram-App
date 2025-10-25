@@ -144,13 +144,6 @@ $loop->addPeriodicTimer(
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        // todo queued prompts
-    }
-);
-
-$loop->addPeriodicTimer(
-    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
-    function () {
         foreach (TelegramBotHandler::$queue as $promptID => $details) {
             $user = $details[0];
             $message = $details[1];
@@ -184,6 +177,21 @@ $loop->addPeriodicTimer(
 
                 if ($prompt === null) {
                     continue;
+                }
+                if ($prompt->isQueued()) {
+                    $tryQueue = $prompt->tryQueue();
+
+                    if ($tryQueue === null) {
+                        unset(TelegramBotHandler::$queue[$promptID]);
+                        Request::editMessageText([
+                            "chat_id" => $message->getChat()->getId(),
+                            "message_id" => $message->getMessageId(),
+                            "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#592837032)"
+                        ]);
+                        continue;
+                    } else if (!$tryQueue) {
+                        continue;
+                    }
                 }
                 $processing = $prompt->isProcessing();
 
