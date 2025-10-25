@@ -190,6 +190,16 @@ $loop->addPeriodicTimer(
                         ]);
                         continue;
                     } else if (!$tryQueue) {
+                        $reply = $prompt->getFailedReplies()[0] ?? null;
+
+                        if ($reply !== null
+                            && $reply->getAnswer() !== $message->getText()) {
+                            Request::editMessageText([
+                                "chat_id" => $message->getChat()->getId(),
+                                "message_id" => $message->getMessageId(),
+                                "text" => $reply->getAnswer()
+                            ]);
+                        }
                         continue;
                     }
                 }
