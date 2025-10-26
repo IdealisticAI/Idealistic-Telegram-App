@@ -265,10 +265,7 @@ $loop->addPeriodicTimer(
                     }
                 }
                 if (!$processing) {
-                    $attachments = array_merge(
-                        $prompt->getCreatedAttachments(),
-                        $prompt->getRequestedAttachments(false)
-                    );
+                    $attachments = $prompt->getCreatedAttachments();
 
                     if (!empty($attachments)) {
                         foreach ($attachments as $attachment) {
