@@ -144,6 +144,8 @@ $loop->addPeriodicTimer(
 $loop->addPeriodicTimer(
     BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
+        $updateSeconds = 1;
+
         foreach (TelegramBotHandler::$queue as $promptID => $details) {
             $user = $details[0];
             $message = $details[1];
@@ -199,6 +201,7 @@ $loop->addPeriodicTimer(
                                 "message_id" => $message->getMessageId(),
                                 "text" => $reply->getAnswer()
                             ]);
+                            $queue[$promptID][3] = $microtime + $updateSeconds;
                         }
                         continue;
                     }
@@ -206,7 +209,7 @@ $loop->addPeriodicTimer(
                 $processing = $prompt->isProcessing();
 
                 if ($processing) {
-                    $queue[$promptID][3] = $microtime + 1;
+                    $queue[$promptID][3] = $microtime + $updateSeconds;
                     $replies = $prompt->getReplies();
                 } else {
                     $replies = $prompt->getReplies();
