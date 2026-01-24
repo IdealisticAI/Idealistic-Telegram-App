@@ -1,6 +1,6 @@
 <?php
 
-require '/root/big_manage_telegram/utilities/utilities.php';
+require '/root/idealistic_telegram/utilities/utilities.php';
 $token = get_keys_from_file(
     "telegram_token"
 );
@@ -10,9 +10,9 @@ if ($token === null) {
 }
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';
-require '/root/big_manage_telegram/utilities/sql.php';
-require '/root/big_manage_telegram/utilities/communication.php';
-require '/root/big_manage_telegram/utilities/evaluator.php';
+require '/root/idealistic_telegram/utilities/sql.php';
+require '/root/idealistic_telegram/utilities/communication.php';
+require '/root/idealistic_telegram/utilities/evaluator.php';
 
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Request;
@@ -37,7 +37,7 @@ try {
         "IdealisticBigManageBot"
     );
     $telegram->useGetUpdatesWithoutDatabase();
-    $telegram->addCommandsPath('/root/big_manage_telegram/commands');
+    $telegram->addCommandsPath('/root/idealistic_telegram/commands');
 } catch (Throwable $e) {
     exit('Error initializing Telegram bot: ' . $e->getMessage());
 }
