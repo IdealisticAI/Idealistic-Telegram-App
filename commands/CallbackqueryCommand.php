@@ -2,12 +2,12 @@
 
 namespace Longman\TelegramBot\Commands\UserCommands;
 
-use BigManageAccessPlatform;
-use BigManageError;
-use BigManageGeneralMessage;
-use BigManageOutcome;
-use BigManageStrings;
-use BigManageTeamInitiator;
+use IdealisticOfficeAccessPlatform;
+use IdealisticOfficeError;
+use IdealisticOfficeGeneralMessage;
+use IdealisticOfficeOutcome;
+use IdealisticOfficeStrings;
+use IdealisticOfficeTeamInitiator;
 use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
 use Throwable;
@@ -35,13 +35,13 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                 || $author->getId() === $this->getTelegram()->getBotId()) {
                 return Request::emptyResponse();
             }
-            $user = BigManageTeamInitiator::findUser(
-                BigManageAccessPlatform::TELEGRAM,
+            $user = IdealisticOfficeTeamInitiator::findUser(
+                IdealisticOfficeAccessPlatform::TELEGRAM,
                 $author->getId(),
                 $author->getUsername()
             );
 
-            if ($user instanceof BigManageOutcome) {
+            if ($user instanceof IdealisticOfficeOutcome) {
                 return Request::sendMessage([
                     "chat_id" => $chat_id,
                     "text" => $user->getTranslatedMessage(),
@@ -54,16 +54,16 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                 if (empty($team->getAccesses())) {
                     return Request::sendMessage([
                         "chat_id" => $chat_id,
-                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#592813014)",
+                        "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#592813014)",
                     ]);
                 } else if (sizeof($team->getAccesses()) === 1) {
                     return Request::sendMessage([
                         "chat_id" => $chat_id,
-                        "text" => BigManageStrings::translateMessage(
+                        "text" => IdealisticOfficeStrings::translateMessage(
                             str_replace(
                                 "{name}",
                                 $team->getName(),
-                                BigManageGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
+                                IdealisticOfficeGeneralMessage::ALREADY_ESTABLISHED_ACCESS_AND_NO_EXTRA
                             ),
                             $team
                         ),
@@ -73,7 +73,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
             } else if (empty($team->getAccesses())) {
                 return Request::sendMessage([
                     "chat_id" => $chat_id,
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#290184123)",
+                    "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#290184123)",
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }
@@ -88,14 +88,14 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                 "reply_to_message_id" => $message->getMessageId()
             ]);
         } catch (Throwable $e) {
-            BigManageError::storeThrowable(
+            IdealisticOfficeError::storeThrowable(
                 null,
                 null,
                 $e
             );
             return Request::sendMessage([
                 "chat_id" => $chat_id,
-                "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#594301827)",
+                "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#594301827)",
                 "reply_to_message_id" => $message->getMessageId()
             ]);
         }

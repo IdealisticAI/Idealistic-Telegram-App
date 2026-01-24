@@ -32,7 +32,7 @@ if (!empty($files)) {
 try {
     $telegram = new Telegram(
         $token[0],
-        "IdealisticBigManageBot"
+        "IdealisticIdealisticOfficeBot"
     );
     $result = $telegram->deleteWebhook();
     echo $result->isOk() ? 'Webhook deleted successfully' : $result->getDescription();

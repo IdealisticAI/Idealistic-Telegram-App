@@ -2,14 +2,14 @@
 
 namespace Longman\TelegramBot\Commands\SystemCommands;
 
-use BigManageAccessPlatform;
-use BigManageAttachment;
-use BigManageError;
-use BigManageGeneralMessage;
-use BigManageOutcome;
-use BigManageReader;
-use BigManageStrings;
-use BigManageTeamInitiator;
+use IdealisticOfficeAccessPlatform;
+use IdealisticOfficeAttachment;
+use IdealisticOfficeError;
+use IdealisticOfficeGeneralMessage;
+use IdealisticOfficeOutcome;
+use IdealisticOfficeReader;
+use IdealisticOfficeStrings;
+use IdealisticOfficeTeamInitiator;
 use Longman\TelegramBot\Commands\SystemCommand;
 use Longman\TelegramBot\Entities\Message;
 use Longman\TelegramBot\Entities\PhotoSize;
@@ -47,13 +47,13 @@ class GenericmessageCommand extends SystemCommand
             if ($author->getId() === $this->getTelegram()->getBotId()) {
                 return Request::emptyResponse();
             }
-            $user = BigManageTeamInitiator::findUser(
-                BigManageAccessPlatform::TELEGRAM,
+            $user = IdealisticOfficeTeamInitiator::findUser(
+                IdealisticOfficeAccessPlatform::TELEGRAM,
                 $author->getId(),
                 $author->getUsername()
             );
 
-            if ($user instanceof BigManageOutcome) {
+            if ($user instanceof IdealisticOfficeOutcome) {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
                     "text" => $user->getTranslatedMessage(),
@@ -62,8 +62,8 @@ class GenericmessageCommand extends SystemCommand
             }
             $request = Request::sendMessage([
                 "chat_id" => $chat->getId(),
-                "text" => BigManageStrings::translateMessage(
-                    BigManageGeneralMessage::PROMPT_WAIT_RESPONSE,
+                "text" => IdealisticOfficeStrings::translateMessage(
+                    IdealisticOfficeGeneralMessage::PROMPT_WAIT_RESPONSE,
                     $user
                 ),
                 "reply_to_message_id" => $message->getMessageId()
@@ -76,7 +76,7 @@ class GenericmessageCommand extends SystemCommand
                 if (!($newMessage instanceof Message)) {
                     return Request::sendMessage([
                         "chat_id" => $chat->getId(),
-                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#748291603)",
+                        "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#748291603)",
                         "reply_to_message_id" => $message->getMessageId()
                     ]);
                 }
@@ -95,8 +95,8 @@ class GenericmessageCommand extends SystemCommand
                         return Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
-                            'text' => BigManageStrings::translateMessage(
-                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
                         ]);
@@ -110,14 +110,14 @@ class GenericmessageCommand extends SystemCommand
                         return Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
-                            'text' => BigManageStrings::translateMessage(
-                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
                         ]);
                     } else {
                         $timezone = $user->getTimezone(false);
-                        $attachments[] = new BigManageAttachment(
+                        $attachments[] = new IdealisticOfficeAttachment(
                             null,
                             $fileID,
                             null,
@@ -130,7 +130,7 @@ class GenericmessageCommand extends SystemCommand
                             base64_encode($contents),
                             null,
                             true,
-                            BigManageReader::getCurrentDate($timezone),
+                            IdealisticOfficeReader::getCurrentDate($timezone),
                             $timezone->getTimeZone(),
                             $user
                         );
@@ -147,8 +147,8 @@ class GenericmessageCommand extends SystemCommand
                         return Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
-                            'text' => BigManageStrings::translateMessage(
-                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
                         ]);
@@ -162,14 +162,14 @@ class GenericmessageCommand extends SystemCommand
                         return Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
-                            'text' => BigManageStrings::translateMessage(
-                                BigManageGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
                         ]);
                     } else {
                         $timezone = $user->getTimezone(false);
-                        $attachments[] = new BigManageAttachment(
+                        $attachments[] = new IdealisticOfficeAttachment(
                             null,
                             $fileID,
                             null,
@@ -182,7 +182,7 @@ class GenericmessageCommand extends SystemCommand
                             base64_encode($contents),
                             null,
                             true,
-                            BigManageReader::getCurrentDate($timezone),
+                            IdealisticOfficeReader::getCurrentDate($timezone),
                             $timezone->getTimeZone(),
                             $user
                         );
@@ -202,9 +202,9 @@ class GenericmessageCommand extends SystemCommand
                     $object->referenced_message = $repliedMessage->getText() ?? $repliedMessage->getCaption();
                     $content = json_encode($object);
                 }
-                $prompt = BigManageTeamInitiator::createPrompt(
+                $prompt = IdealisticOfficeTeamInitiator::createPrompt(
                     $user,
-                    BigManageAccessPlatform::TELEGRAM,
+                    IdealisticOfficeAccessPlatform::TELEGRAM,
                     $author->getId(),
                     $chat->getId(),
                     null,
@@ -226,7 +226,7 @@ class GenericmessageCommand extends SystemCommand
             }
             return $request;
         } catch (Throwable $e) {
-            BigManageError::storeThrowable(
+            IdealisticOfficeError::storeThrowable(
                 null,
                 null,
                 $e
@@ -235,12 +235,12 @@ class GenericmessageCommand extends SystemCommand
                 return Request::editMessageText([
                     'chat_id' => $chat->getId(),
                     'message_id' => $newMessage->getMessageId(),
-                    'text' => BigManageGeneralMessage::EXCEPTION_THROWN . " (#365910472)"
+                    'text' => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#365910472)"
                 ]);
             } else {
                 return Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#837294105)",
+                    "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#837294105)",
                     "reply_to_message_id" => $message->getMessageId()
                 ]);
             }

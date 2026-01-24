@@ -1,1 +1,1 @@
-Telegram implementation of the BigManage application.
+Telegram implementation of the Idealistic application.

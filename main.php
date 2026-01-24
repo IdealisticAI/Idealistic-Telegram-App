@@ -34,7 +34,7 @@ if (!empty($files)) {
 try {
     $telegram = new Telegram(
         $token[0],
-        "IdealisticBigManageBot"
+        "IdealisticIdealisticOfficeBot"
     );
     $telegram->useGetUpdatesWithoutDatabase();
     $telegram->addCommandsPath('/root/idealistic_telegram/commands');
@@ -80,16 +80,16 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
 });
 
 $loop->addPeriodicTimer(
-    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    IdealisticOfficeLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        $notifications = BigManageNotifications::retrieve(BigManageAccessPlatform::TELEGRAM);
+        $notifications = IdealisticOfficeNotifications::retrieve(IdealisticOfficeAccessPlatform::TELEGRAM);
 
         if (!empty($notifications)) {
             foreach ($notifications as $notification) {
                 $identity = $notification->getUser()->getLastIdentity();
 
                 if ($identity === null
-                    || $identity->getPlatformID() !== BigManageAccessPlatform::TELEGRAM) {
+                    || $identity->getPlatformID() !== IdealisticOfficeAccessPlatform::TELEGRAM) {
                     continue;
                 }
                 $chat_id = $identity->getPlatformChatID();
@@ -142,7 +142,7 @@ $loop->addPeriodicTimer(
 );
 
 $loop->addPeriodicTimer(
-    BigManageLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    IdealisticOfficeLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
         $updateSeconds = 1;
 
@@ -152,7 +152,7 @@ $loop->addPeriodicTimer(
             $time = $details[2];
             $updateCooldown = $details[3];
 
-            if (!($user instanceof BigManageUser)
+            if (!($user instanceof IdealisticOfficeUser)
                 || !($message instanceof Message)
                 || !is_int($time)
                 || !is_numeric($updateCooldown)) {
@@ -162,7 +162,7 @@ $loop->addPeriodicTimer(
                     Request::editMessageText([
                         "chat_id" => $message->getChat()->getId(),
                         "message_id" => $message->getMessageId(),
-                        "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
+                        "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
                     ]);
                 }
                 continue;
@@ -188,7 +188,7 @@ $loop->addPeriodicTimer(
                         Request::editMessageText([
                             "chat_id" => $message->getChat()->getId(),
                             "message_id" => $message->getMessageId(),
-                            "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#592837032)"
+                            "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#592837032)"
                         ]);
                         continue;
                     } else if (!$tryQueue) {
@@ -241,7 +241,7 @@ $loop->addPeriodicTimer(
                             $pieces,
                             str_split(
                                 $reply->getAnswer(),
-                                BigManageLimit::MESSAGE_CHARACTER_LIMIT[BigManageAccessPlatform::TELEGRAM]
+                                IdealisticOfficeLimit::MESSAGE_CHARACTER_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]
                             )
                         );
                     }
@@ -269,8 +269,8 @@ $loop->addPeriodicTimer(
 
                     if (!empty($attachments)) {
                         foreach ($attachments as $attachment) {
-                            if (!($attachment instanceof BigManageAttachment)
-                                || $attachment->getBytes() > BigManageLimit::ATTACHMENT_BYTES_LIMIT[BigManageAccessPlatform::TELEGRAM]) {
+                            if (!($attachment instanceof IdealisticOfficeAttachment)
+                                || $attachment->getBytes() > IdealisticOfficeLimit::ATTACHMENT_BYTES_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]) {
                                 continue;
                             }
                             $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
@@ -301,7 +301,7 @@ $loop->addPeriodicTimer(
                     }
                 }
             } catch (Throwable $e) {
-                BigManageError::storeThrowable(
+                IdealisticOfficeError::storeThrowable(
                     $user->getTeam(),
                     $user,
                     $e
@@ -309,7 +309,7 @@ $loop->addPeriodicTimer(
                 Request::editMessageText([
                     "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
-                    "text" => BigManageGeneralMessage::EXCEPTION_THROWN . " (#582013947)"
+                    "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#582013947)"
                 ]);
             }
         }
