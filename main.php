@@ -34,7 +34,7 @@ if (!empty($files)) {
 try {
     $telegram = new Telegram(
         $token[0],
-        "IdealisticIdealisticOfficeBot"
+        "IdealisticBot"
     );
     $telegram->useGetUpdatesWithoutDatabase();
     $telegram->addCommandsPath('/root/idealistic_telegram/commands');

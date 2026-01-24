@@ -12,9 +12,10 @@ use Longman\TelegramBot\Commands\UserCommand;
 use Longman\TelegramBot\Entities\InlineKeyboard;
 use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
+use Longman\TelegramBot\TelegramLog;
 use Throwable;
 
-class IdealisticOfficeCommand extends UserCommand
+class IdealisticCommand extends UserCommand
 {
     protected $name = \IdealisticOfficeVariable::APPLICATION_COMMAND;
     protected $description = 'Manage your access';
@@ -106,4 +107,5 @@ class IdealisticOfficeCommand extends UserCommand
             ]);
         }
     }
+
 }
