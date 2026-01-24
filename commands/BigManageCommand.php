@@ -18,7 +18,7 @@ class BigManageCommand extends UserCommand
 {
     protected $name = \BigManageVariable::APPLICATION_COMMAND;
     protected $description = 'Manage your access';
-    protected $usage = '/bigmanage';
+    protected $usage = '/idealistic';
     protected $version = '1.0';
 
     public function execute(): ServerResponse
