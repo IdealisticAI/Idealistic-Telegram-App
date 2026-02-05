@@ -207,14 +207,11 @@ $loop->addPeriodicTimer(
                     }
                 }
                 $processing = $prompt->isProcessing();
+                $replies = $prompt->getReplies();
 
                 if ($processing) {
                     $queue[$promptID][3] = $microtime + $updateSeconds;
-                    $replies = $prompt->finishedBasicProcessing()
-                        ? $prompt->getReplies()
-                        : array();
                 } else {
-                    $replies = $prompt->getReplies();
                     unset(TelegramBotHandler::$queue[$promptID]);
 
                     if (empty($replies)) {
@@ -248,18 +245,17 @@ $loop->addPeriodicTimer(
 
                     if (!empty($pieces)) {
                         if (Request::editMessageText([
-                            "chat_id" => $chat_id,
-                            "message_id" => $message->getMessageId(),
-                            "text" => array_shift($pieces)
-                        ])->isOk()) {
-                            if (!$processing) {
-                                foreach ($pieces as $piece) {
-                                    Request::sendMessage([
-                                        "chat_id" => $chat_id,
-                                        "text" => $piece,
-                                        "reply_to_message_id" => $message->getMessageId()
-                                    ]);
-                                }
+                                "chat_id" => $chat_id,
+                                "message_id" => $message->getMessageId(),
+                                "text" => array_shift($pieces)
+                            ])->isOk()
+                            && !$processing) {
+                            foreach ($pieces as $piece) {
+                                Request::sendMessage([
+                                    "chat_id" => $chat_id,
+                                    "text" => $piece,
+                                    "reply_to_message_id" => $message->getMessageId()
+                                ]);
                             }
                         }
                     }
