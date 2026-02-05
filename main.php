@@ -144,7 +144,7 @@ $loop->addPeriodicTimer(
 $loop->addPeriodicTimer(
     IdealisticOfficeLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
     function () {
-        $updateSeconds = 1;
+        $updateSeconds = 2;
 
         foreach (TelegramBotHandler::$queue as $promptID => $details) {
             $user = $details[0];
