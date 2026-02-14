@@ -213,19 +213,6 @@ $loop->addPeriodicTimer(
                     $queue[$promptID][3] = $microtime + $updateSeconds;
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
-
-                    if (empty($replies)) {
-                        $failedReply = $prompt->addFinalFailedReply();
-
-                        if ($failedReply !== null) {
-                            Request::editMessageText([
-                                "chat_id" => $chat_id,
-                                "message_id" => $message->getMessageId(),
-                                "text" => $failedReply
-                            ]);
-                        }
-                        continue;
-                    }
                 }
                 $pieces = array();
 
@@ -265,10 +252,6 @@ $loop->addPeriodicTimer(
 
                     if (!empty($attachments)) {
                         foreach ($attachments as $attachment) {
-                            if (!($attachment instanceof IdealisticOfficeAttachment)
-                                || $attachment->getBytes() > IdealisticOfficeLimit::ATTACHMENT_BYTES_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]) {
-                                continue;
-                            }
                             $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
                             file_put_contents($tempPath, $attachment->getDecodedData());
                             $file = Request::encodeFile($tempPath);
