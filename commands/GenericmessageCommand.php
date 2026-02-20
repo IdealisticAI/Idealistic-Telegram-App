@@ -120,7 +120,6 @@ class GenericmessageCommand extends SystemCommand
                         $attachments[] = new IdealisticOfficeAttachment(
                             null,
                             $fileID,
-                            null,
                             "image/jpeg",
                             null,
                             $photoSize->getFileSize(),
@@ -172,7 +171,6 @@ class GenericmessageCommand extends SystemCommand
                         $attachments[] = new IdealisticOfficeAttachment(
                             null,
                             $fileID,
-                            null,
                             "audio/ogg",
                             null,
                             $voice->getFileSize(),
