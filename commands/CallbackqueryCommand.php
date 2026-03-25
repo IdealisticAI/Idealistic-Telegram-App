@@ -10,6 +10,7 @@ use IdealisticOfficeStrings;
 use IdealisticOfficeTeamInitiator;
 use Longman\TelegramBot\Entities\ServerResponse;
 use Longman\TelegramBot\Request;
+use TelegramServerResponse;
 use Throwable;
 
 class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\CallbackqueryCommand
@@ -42,22 +43,22 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
             );
 
             if ($user instanceof IdealisticOfficeOutcome) {
-                return Request::sendMessage([
+                return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat_id,
                     "text" => $user->getTranslatedMessage(),
                     "reply_to_message_id" => $message->getMessageId()
-                ]);
+                ]));
             }
             $team = $user->getEvolvedTeam(false);
 
             if ($team->hasEstablishedAccess()) {
                 if (empty($team->getAccesses())) {
-                    return Request::sendMessage([
+                    return TelegramServerResponse::handle(Request::sendMessage([
                         "chat_id" => $chat_id,
                         "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#592813014)",
-                    ]);
+                    ]));
                 } else if (sizeof($team->getAccesses()) === 1) {
-                    return Request::sendMessage([
+                    return TelegramServerResponse::handle(Request::sendMessage([
                         "chat_id" => $chat_id,
                         "text" => IdealisticOfficeStrings::translateMessage(
                             str_replace(
@@ -68,36 +69,36 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
                             $team
                         ),
                         "reply_to_message_id" => $message->getMessageId()
-                    ]);
+                    ]));
                 }
             } else if (empty($team->getAccesses())) {
-                return Request::sendMessage([
+                return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat_id,
                     "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#290184123)",
                     "reply_to_message_id" => $message->getMessageId()
-                ]);
+                ]));
             }
             $choice = $team->selectAccess(
                 $data,
                 $user->getAccount(),
                 false
             );
-            return Request::sendMessage([
+            return TelegramServerResponse::handle(Request::sendMessage([
                 "chat_id" => $chat_id,
                 "text" => $choice->getTranslatedMessage($user),
                 "reply_to_message_id" => $message->getMessageId()
-            ]);
+            ]));
         } catch (Throwable $e) {
             IdealisticOfficeError::storeThrowable(
                 null,
                 null,
                 $e
             );
-            return Request::sendMessage([
+            return TelegramServerResponse::handle(Request::sendMessage([
                 "chat_id" => $chat_id,
                 "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#594301827)",
                 "reply_to_message_id" => $message->getMessageId()
-            ]);
+            ]));
         }
     }
 }

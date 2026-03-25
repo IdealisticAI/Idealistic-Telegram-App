@@ -10,6 +10,7 @@ if ($token === null) {
 }
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';
+require '/root/idealistic_telegram/utilities/response.php';
 require '/root/idealistic_telegram/utilities/sql.php';
 require '/root/idealistic_telegram/utilities/communication.php';
 require '/root/idealistic_telegram/utilities/evaluator.php';
@@ -53,12 +54,12 @@ $loop = Loop::get();
 $lastUpdateId = 0;
 
 $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
-    $response = Request::getUpdates([
+    $response = TelegramServerResponse::handle(Request::getUpdates([
         'offset' => $lastUpdateId + 1,
         'timeout' => 1
-    ]);
+    ]));
 
-    if ($response->isOk()) {
+    if (TelegramServerResponse::handle($response)->isOk()) {
         try {
             foreach ($response->getResult() as $update) {
                 $telegram->setCustomInput(json_encode($update));
@@ -102,10 +103,10 @@ $loop->addPeriodicTimer(
                         && $notification->getAttachmentContent() !== null
                         || $notification->getMessage() !== null)) {
                     if ($notification->getAttachmentContent() === null) {
-                        Request::sendMessage([
+                        TelegramServerResponse::handle(Request::sendMessage([
                             "chat_id" => $chat_id,
                             "text" => $notification->getMessage()
-                        ]);
+                        ]));
                     } else {
                         $data = $notification->isBase64()
                             ? base64_decode($notification->getAttachmentContent())
@@ -122,16 +123,16 @@ $loop->addPeriodicTimer(
                         }
                         if ($notification->isImage()) {
                             $data["photo"] = $file;
-                            Request::sendPhoto($data);
+                            TelegramServerResponse::handle(Request::sendPhoto($data));
                         } else if ($notification->isAudio()) {
                             $data["audio"] = $file;
-                            Request::sendAudio($data);
+                            TelegramServerResponse::handle(Request::sendAudio($data));
                         } else if ($notification->isVideo()) {
                             $data["video"] = $file;
-                            Request::sendVideo($data);
+                            TelegramServerResponse::handle(Request::sendVideo($data));
                         } else {
                             $data["document"] = $file;
-                            Request::sendDocument($data);
+                            TelegramServerResponse::handle(Request::sendDocument($data));
                         }
                         unlink($tempPath);
                     }
@@ -159,11 +160,11 @@ $loop->addPeriodicTimer(
                 unset(TelegramBotHandler::$queue[$promptID]);
 
                 if ($message instanceof Message) {
-                    Request::editMessageText([
+                    TelegramServerResponse::handle(Request::editMessageText([
                         "chat_id" => $message->getChat()->getId(),
                         "message_id" => $message->getMessageId(),
                         "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#193746820)"
-                    ]);
+                    ]));
                 }
                 continue;
             }
@@ -185,22 +186,22 @@ $loop->addPeriodicTimer(
 
                     if ($tryQueue === null) {
                         unset(TelegramBotHandler::$queue[$promptID]);
-                        Request::editMessageText([
+                        TelegramServerResponse::handle(Request::editMessageText([
                             "chat_id" => $message->getChat()->getId(),
                             "message_id" => $message->getMessageId(),
                             "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#592837032)"
-                        ]);
+                        ]));
                         continue;
                     } else if (!$tryQueue) {
                         $reply = $prompt->getFailedReplies()[0] ?? null;
 
                         if ($reply !== null
                             && $reply->getAnswer() !== $message->getText()) {
-                            Request::editMessageText([
+                            TelegramServerResponse::handle(Request::editMessageText([
                                 "chat_id" => $message->getChat()->getId(),
                                 "message_id" => $message->getMessageId(),
                                 "text" => $reply->getAnswer()
-                            ]);
+                            ]));
                             TelegramBotHandler::$queue[$promptID][3] = $microtime + $updateSeconds;
                         }
                         continue;
@@ -228,18 +229,18 @@ $loop->addPeriodicTimer(
                     }
 
                     if (!empty($pieces)) {
-                        if (Request::editMessageText([
+                        if (TelegramServerResponse::handle(Request::editMessageText([
                                 "chat_id" => $chat_id,
                                 "message_id" => $message->getMessageId(),
                                 "text" => array_shift($pieces)
-                            ])->isOk()
+                            ]))->isOk()
                             && !$processing) {
                             foreach ($pieces as $piece) {
-                                Request::sendMessage([
+                                TelegramServerResponse::handle(Request::sendMessage([
                                     "chat_id" => $chat_id,
                                     "text" => $piece,
                                     "reply_to_message_id" => $message->getMessageId()
-                                ]);
+                                ]));
                             }
                         }
                     }
@@ -261,16 +262,16 @@ $loop->addPeriodicTimer(
                             }
                             if ($attachment->isImage()) {
                                 $data["photo"] = $file;
-                                Request::sendPhoto($data);
+                                TelegramServerResponse::handle(Request::sendPhoto($data));
                             } else if ($attachment->isAudio()) {
                                 $data["audio"] = $file;
-                                Request::sendAudio($data);
+                                TelegramServerResponse::handle(Request::sendAudio($data));
                             } else if ($attachment->isVideo()) {
                                 $data["video"] = $file;
-                                Request::sendVideo($data);
+                                TelegramServerResponse::handle(Request::sendVideo($data));
                             } else {
                                 $data["document"] = $file;
-                                Request::sendDocument($data);
+                                TelegramServerResponse::handle(Request::sendDocument($data));
                             }
                             unlink($tempPath);
                         }
@@ -282,11 +283,11 @@ $loop->addPeriodicTimer(
                     $user,
                     $e
                 );
-                Request::editMessageText([
+                TelegramServerResponse::handle(Request::editMessageText([
                     "chat_id" => $chat_id,
                     "message_id" => $message->getMessageId(),
                     "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#582013947)"
-                ]);
+                ]));
             }
         }
     }

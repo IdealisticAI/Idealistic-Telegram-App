@@ -18,6 +18,7 @@ use Longman\TelegramBot\Entities\Voice;
 use Longman\TelegramBot\Request;
 use stdClass;
 use TelegramBotHandler;
+use TelegramServerResponse;
 use Throwable;
 
 class GenericmessageCommand extends SystemCommand
@@ -33,16 +34,16 @@ class GenericmessageCommand extends SystemCommand
 
         try {
             if (!$chat->isPrivateChat()) {
-                return Request::leaveChat(["chat_id" => $chat->getId()]);
+                return TelegramServerResponse::handle(Request::leaveChat(["chat_id" => $chat->getId()]));
             }
             $author = $message->getFrom();
 
             if ($author === null) {
-                return Request::sendMessage([
+                return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat->getId(),
                     "text" => "No Telegram message author found.",
                     "reply_to_message_id" => $message->getMessageId()
-                ]);
+                ]));
             }
             if ($author->getId() === $this->getTelegram()->getBotId()) {
                 return Request::emptyResponse();
@@ -54,31 +55,31 @@ class GenericmessageCommand extends SystemCommand
             );
 
             if ($user instanceof IdealisticOfficeOutcome) {
-                return Request::sendMessage([
+                return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat->getId(),
                     "text" => $user->getTranslatedMessage(),
                     "reply_to_message_id" => $message->getMessageId()
-                ]);
+                ]));
             }
-            $request = Request::sendMessage([
+            $request = TelegramServerResponse::handle(Request::sendMessage([
                 "chat_id" => $chat->getId(),
                 "text" => IdealisticOfficeStrings::translateMessage(
                     IdealisticOfficeGeneralMessage::PROMPT_WAIT_RESPONSE,
                     $user
                 ),
                 "reply_to_message_id" => $message->getMessageId()
-            ]);
+            ]));
 
             if ($request->isOk()) {
                 global $token;
                 $newMessage = $request->getResult();
 
                 if (!($newMessage instanceof Message)) {
-                    return Request::sendMessage([
+                    return TelegramServerResponse::handle(Request::sendMessage([
                         "chat_id" => $chat->getId(),
                         "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#748291603)",
                         "reply_to_message_id" => $message->getMessageId()
-                    ]);
+                    ]));
                 }
                 $content = null;
                 $attachments = array();
@@ -89,17 +90,17 @@ class GenericmessageCommand extends SystemCommand
 
                 if ($photoSize instanceof PhotoSize) {
                     $fileID = $photoSize->getFileId();
-                    $response = Request::getFile(['file_id' => $fileID]);
+                    $response = TelegramServerResponse::handle(Request::getFile(['file_id' => $fileID]));
 
                     if (!$response->isOk()) {
-                        return Request::editMessageText([
+                        return TelegramServerResponse::handle(Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
                             'text' => IdealisticOfficeStrings::translateMessage(
                                 IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
-                        ]);
+                        ]));
                     }
                     $contents = @file_get_contents(
                         "https://api.telegram.org/file/bot"
@@ -107,14 +108,14 @@ class GenericmessageCommand extends SystemCommand
                     );
 
                     if ($contents === false) {
-                        return Request::editMessageText([
+                        return TelegramServerResponse::handle(Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
                             'text' => IdealisticOfficeStrings::translateMessage(
                                 IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
-                        ]);
+                        ]));
                     } else {
                         $timezone = $user->getTimezone(false);
                         $attachments[] = new IdealisticOfficeAttachment(
@@ -140,17 +141,17 @@ class GenericmessageCommand extends SystemCommand
 
                 if ($voice instanceof Voice) {
                     $fileID = $voice->getFileId();
-                    $response = Request::getFile(['file_id' => $fileID]);
+                    $response = TelegramServerResponse::handle(Request::getFile(['file_id' => $fileID]));
 
                     if (!$response->isOk()) {
-                        return Request::editMessageText([
+                        return TelegramServerResponse::handle(Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
                             'text' => IdealisticOfficeStrings::translateMessage(
                                 IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
-                        ]);
+                        ]));
                     }
                     $contents = @file_get_contents(
                         "https://api.telegram.org/file/bot"
@@ -158,14 +159,14 @@ class GenericmessageCommand extends SystemCommand
                     );
 
                     if ($contents === false) {
-                        return Request::editMessageText([
+                        return TelegramServerResponse::handle(Request::editMessageText([
                             'chat_id' => $chat->getId(),
                             'message_id' => $newMessage->getMessageId(),
                             'text' => IdealisticOfficeStrings::translateMessage(
                                 IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
                                 $user
                             )
-                        ]);
+                        ]));
                     } else {
                         $timezone = $user->getTimezone(false);
                         $attachments[] = new IdealisticOfficeAttachment(
@@ -214,11 +215,11 @@ class GenericmessageCommand extends SystemCommand
                 );
 
                 if (!$prompt->isPositiveOutcome()) {
-                    return Request::editMessageText([
+                    return TelegramServerResponse::handle(Request::editMessageText([
                         'chat_id' => $chat->getId(),
                         'message_id' => $newMessage->getMessageId(),
                         'text' => $prompt->getTranslatedMessage($user)
-                    ]);
+                    ]));
                 }
                 TelegramBotHandler::$queue[$prompt->getRawMessage()] = array($user, $newMessage, time(), microtime(true));
             }
@@ -230,17 +231,17 @@ class GenericmessageCommand extends SystemCommand
                 $e
             );
             if (isset($newMessage)) {
-                return Request::editMessageText([
+                return TelegramServerResponse::handle(Request::editMessageText([
                     'chat_id' => $chat->getId(),
                     'message_id' => $newMessage->getMessageId(),
                     'text' => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#365910472)"
-                ]);
+                ]));
             } else {
-                return Request::sendMessage([
+                return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat->getId(),
                     "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#837294105)",
                     "reply_to_message_id" => $message->getMessageId()
-                ]);
+                ]));
             }
         }
     }
