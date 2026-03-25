@@ -201,7 +201,7 @@ $loop->addPeriodicTimer(
                                 "message_id" => $message->getMessageId(),
                                 "text" => $reply->getAnswer()
                             ]);
-                            $queue[$promptID][3] = $microtime + $updateSeconds;
+                            TelegramBotHandler::$queue[$promptID][3] = $microtime + $updateSeconds;
                         }
                         continue;
                     }
@@ -210,7 +210,7 @@ $loop->addPeriodicTimer(
                 $replies = $prompt->getReplies();
 
                 if ($processing) {
-                    $queue[$promptID][3] = $microtime + $updateSeconds;
+                    TelegramBotHandler::$queue[$promptID][3] = $microtime + $updateSeconds;
                 } else {
                     unset(TelegramBotHandler::$queue[$promptID]);
                 }
