@@ -229,12 +229,13 @@ $loop->addPeriodicTimer(
                     }
 
                     if (!empty($pieces)) {
-                        if (TelegramServerResponse::handle(Request::editMessageText([
-                                "chat_id" => $chat_id,
-                                "message_id" => $message->getMessageId(),
-                                "text" => array_shift($pieces)
-                            ]))->isOk()
-                            && !$processing) {
+                        Request::editMessageText([
+                            "chat_id" => $chat_id,
+                            "message_id" => $message->getMessageId(),
+                            "text" => array_shift($pieces)
+                        ]); // Do not handle this one, prone to same text edit errors
+
+                        if (!$processing) {
                             foreach ($pieces as $piece) {
                                 TelegramServerResponse::handle(Request::sendMessage([
                                     "chat_id" => $chat_id,
