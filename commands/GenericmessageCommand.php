@@ -187,6 +187,108 @@ class GenericmessageCommand extends SystemCommand
                         );
                     }
                 }
+                $document = $message->getDocument();
+
+                if ($document !== null) {
+                    $fileID = $document->getFileId();
+                    $response = TelegramServerResponse::handle(Request::getFile(['file_id' => $fileID]));
+
+                    if (!$response->isOk()) {
+                        return TelegramServerResponse::handle(Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]));
+                    }
+                    $contents = @file_get_contents(
+                        "https://api.telegram.org/file/bot"
+                        . $token[0] . "/" . $response->getResult()->getFilePath()
+                    );
+
+                    if ($contents === false) {
+                        return TelegramServerResponse::handle(Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]));
+                    } else {
+                        $timezone = $user->getTimezone(false);
+                        $attachments[] = new IdealisticOfficeAttachment(
+                            null,
+                            $fileID,
+                            $document->getMimeType(),
+                            null,
+                            $document->getFileSize(),
+                            null,
+                            null,
+                            null,
+                            base64_encode($contents),
+                            null,
+                            true,
+                            IdealisticOfficeReader::getCurrentDate($timezone),
+                            $timezone->getTimeZone(),
+                            $user
+                        );
+                        $content = $message->getCaption();
+                    }
+                }
+                $video = $message->getVideo();
+
+                if ($video !== null) {
+                    $fileID = $video->getFileId();
+                    $response = TelegramServerResponse::handle(Request::getFile(['file_id' => $fileID]));
+
+                    if (!$response->isOk()) {
+                        return TelegramServerResponse::handle(Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]));
+                    }
+                    $contents = @file_get_contents(
+                        "https://api.telegram.org/file/bot"
+                        . $token[0] . "/" . $response->getResult()->getFilePath()
+                    );
+
+                    if ($contents === false) {
+                        return TelegramServerResponse::handle(Request::editMessageText([
+                            'chat_id' => $chat->getId(),
+                            'message_id' => $newMessage->getMessageId(),
+                            'text' => IdealisticOfficeStrings::translateMessage(
+                                IdealisticOfficeGeneralMessage::ATTACHMENT_FAILED_PROCESSING,
+                                $user
+                            )
+                        ]));
+                    } else {
+                        $timezone = $user->getTimezone(false);
+                        $attachments[] = new IdealisticOfficeAttachment(
+                            null,
+                            $fileID,
+                            "video/mp4",
+                            null,
+                            $video->getFileSize(),
+                            null,
+                            null,
+                            null,
+                            base64_encode($contents),
+                            null,
+                            true,
+                            IdealisticOfficeReader::getCurrentDate($timezone),
+                            $timezone->getTimeZone(),
+                            $user
+                        );
+                        $content = $message->getCaption();
+                    }
+                }
                 $repliedMessage = $message->getReplyToMessage();
 
                 if ($repliedMessage === null
