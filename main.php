@@ -181,32 +181,6 @@ $loop->addPeriodicTimer(
                 if ($prompt === null) {
                     continue;
                 }
-                if ($prompt->isQueued()) {
-                    $tryQueue = $prompt->tryQueue();
-
-                    if ($tryQueue === null) {
-                        unset(TelegramBotHandler::$queue[$promptID]);
-                        TelegramServerResponse::handle(Request::editMessageText([
-                            "chat_id" => $message->getChat()->getId(),
-                            "message_id" => $message->getMessageId(),
-                            "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#592837032)"
-                        ]));
-                        continue;
-                    } else if (!$tryQueue) {
-                        $reply = $prompt->getFailedReplies()[0] ?? null;
-
-                        if ($reply !== null
-                            && $reply->getAnswer() !== $message->getText()) {
-                            TelegramServerResponse::handle(Request::editMessageText([
-                                "chat_id" => $message->getChat()->getId(),
-                                "message_id" => $message->getMessageId(),
-                                "text" => $reply->getAnswer()
-                            ]));
-                            TelegramBotHandler::$queue[$promptID][3] = $microtime + $updateSeconds;
-                        }
-                        continue;
-                    }
-                }
                 $processing = $prompt->isProcessing();
                 $replies = $prompt->getReplies();
 
