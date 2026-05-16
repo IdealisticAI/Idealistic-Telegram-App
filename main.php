@@ -87,7 +87,7 @@ $loop->addPeriodicTimer(
 
         if (!empty($notifications)) {
             foreach ($notifications as $notification) {
-                $identity = $notification->getUser()->getLastIdentity();
+                $identity = $notification->getUser()?->getLastIdentity();
 
                 if ($identity === null
                     || $identity->getPlatformID() !== IdealisticOfficeAccessPlatform::TELEGRAM) {
