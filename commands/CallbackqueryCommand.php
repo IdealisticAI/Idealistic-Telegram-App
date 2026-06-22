@@ -38,8 +38,7 @@ class CallbackqueryCommand extends \Longman\TelegramBot\Commands\SystemCommands\
             }
             $user = IdealisticOfficeTeamInitiator::findUser(
                 IdealisticOfficeAccessPlatform::TELEGRAM,
-                $author->getId(),
-                $author->getUsername()
+                $author->getId()
             );
 
             if ($user instanceof IdealisticOfficeOutcome) {

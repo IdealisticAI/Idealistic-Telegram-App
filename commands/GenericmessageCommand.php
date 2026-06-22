@@ -50,8 +50,7 @@ class GenericmessageCommand extends SystemCommand
             }
             $user = IdealisticOfficeTeamInitiator::findUser(
                 IdealisticOfficeAccessPlatform::TELEGRAM,
-                $author->getId(),
-                $author->getUsername()
+                $author->getId()
             );
 
             if ($user instanceof IdealisticOfficeOutcome) {
