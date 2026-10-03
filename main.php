@@ -43,6 +43,22 @@ try {
     exit('Error initializing Telegram bot: ' . $e->getMessage());
 }
 
+TelegramServerResponse::handle(Request::setMyCommands([
+    "commands" => [
+        [
+            "command" => "idealistic_setup",
+            "description" => "Install a portal in this group or topic."
+        ],
+        [
+            "command" => "idealistic_remove",
+            "description" => "Uninstall the portal of this group or topic."
+        ]
+    ],
+    "scope" => [
+        "type" => "all_chat_administrators"
+    ]
+]));
+
 // Separator
 
 class TelegramBotHandler

@@ -34,7 +34,7 @@ class GenericmessageCommand extends SystemCommand
 
         try {
             if (!$chat->isPrivateChat()) {
-                return TelegramServerResponse::handle(Request::leaveChat(["chat_id" => $chat->getId()]));
+                return Request::emptyResponse();
             }
             $author = $message->getFrom();
 
