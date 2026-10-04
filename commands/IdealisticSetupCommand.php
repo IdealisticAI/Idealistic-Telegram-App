@@ -42,10 +42,12 @@ class IdealisticSetupCommand extends UserCommand
 
             if ($member === null
                 || !$member->isOk()
-                || !in_array($member->getResult()->getStatus(), array("creator", "administrator"), true)) {
+                || $member->getResult()->getStatus() !== "creator"
+                && ($member->getResult()->getStatus() !== "administrator"
+                    || !$member->getResult()->getCanChangeInfo())) {
                 return TelegramServerResponse::handle(Request::sendMessage([
                     "chat_id" => $chat->getId(),
-                    "text" => "You need to be an administrator of this group to use this command.",
+                    "text" => "You need the 'Change Group Info' admin right to use this command.",
                     "reply_to_message_id" => $message->getMessageId()
                 ]));
             }
