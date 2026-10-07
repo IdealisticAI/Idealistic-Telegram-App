@@ -63,7 +63,31 @@ TelegramServerResponse::handle(Request::setMyCommands([
 
 class TelegramBotHandler
 {
+    public const
+        TYPING_REFRESH_SECONDS = 4, // Telegram clears typing after ~5 seconds
+        TYPING_MAX_SECONDS = 60; // Matches the time portal replies remain deliverable
+
     public static array $queue = array();
+    // Chats/topics where the bot shows "typing..." until the portal's reply is delivered
+    public static array $typing = array();
+
+    public static function getTypingKey(int|string $chatId, int|string|null $threadId): string
+    {
+        return $chatId . ":" . ($threadId ?? "");
+    }
+
+    public static function sendTyping(int|string $chatId, int|string|null $threadId): void
+    {
+        $data = [
+            "chat_id" => $chatId,
+            "action" => "typing"
+        ];
+
+        if ($threadId !== null) {
+            $data["message_thread_id"] = $threadId;
+        }
+        TelegramServerResponse::handle(Request::sendChatAction($data));
+    }
 }
 
 $loop = Loop::get();
@@ -279,6 +303,84 @@ $loop->addPeriodicTimer(
                     "message_id" => $message->getMessageId(),
                     "text" => IdealisticOfficeGeneralMessage::EXCEPTION_THROWN . " (#582013947)"
                 ]));
+            }
+        }
+    }
+);
+
+$loop->addPeriodicTimer(
+    IdealisticOfficeLimit::EXTERNAL_APPLICATION_QUERY_SECONDS,
+    function () {
+        $portalMessages = IdealisticOfficePortalIndependent::getInstalledPortalMessages(IdealisticOfficeAccessPlatform::TELEGRAM);
+
+        if (!empty($portalMessages)) {
+            foreach ($portalMessages as $portalMessage) {
+                if (!$portalMessage->process()) {
+                    continue;
+                }
+                unset(TelegramBotHandler::$typing[TelegramBotHandler::getTypingKey(
+                    $portalMessage->getChannelId(),
+                    $portalMessage->getChannelThreadId()
+                )]);
+                $data = [
+                    "chat_id" => $portalMessage->getChannelId()
+                ];
+
+                if ($portalMessage->getChannelThreadId() !== null) {
+                    $data["message_thread_id"] = $portalMessage->getChannelThreadId();
+                }
+                if ($portalMessage->getMessageId() !== null) {
+                    $data["reply_to_message_id"] = $portalMessage->getMessageId();
+                }
+                if ($portalMessage->hasMessage()) {
+                    foreach (mb_str_split(
+                        $portalMessage->getMessage(),
+                        IdealisticOfficeLimit::MESSAGE_CHARACTER_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]
+                    ) as $piece) {
+                        TelegramServerResponse::handle(Request::sendMessage(array_merge($data, [
+                            "text" => $piece
+                        ])));
+                    }
+                }
+                $attachment = $portalMessage->getAttachment();
+
+                if ($attachment !== null) {
+                    $decoded = $attachment->getDecodedData();
+
+                    if ($decoded !== null) {
+                        $tempPath = sys_get_temp_dir() . "/" . $attachment->getName();
+                        file_put_contents($tempPath, $decoded);
+                        $file = Request::encodeFile($tempPath);
+
+                        if ($attachment->isImage()) {
+                            $data["photo"] = $file;
+                            TelegramServerResponse::handle(Request::sendPhoto($data));
+                        } else if ($attachment->isAudio()) {
+                            $data["audio"] = $file;
+                            TelegramServerResponse::handle(Request::sendAudio($data));
+                        } else if ($attachment->isVideo()) {
+                            $data["video"] = $file;
+                            TelegramServerResponse::handle(Request::sendVideo($data));
+                        } else {
+                            $data["document"] = $file;
+                            TelegramServerResponse::handle(Request::sendDocument($data));
+                        }
+                        unlink($tempPath);
+                    }
+                }
+            }
+        }
+    }
+);
+
+$loop->addPeriodicTimer(
+    TelegramBotHandler::TYPING_REFRESH_SECONDS,
+    function () {
+        foreach (TelegramBotHandler::$typing as $key => $details) {
+            if (time() > $details[2]) {
+                unset(TelegramBotHandler::$typing[$key]);
+            } else {
+                TelegramBotHandler::sendTyping($details[0], $details[1]);
             }
         }
     }

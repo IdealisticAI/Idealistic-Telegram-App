@@ -7,6 +7,7 @@ use IdealisticOfficeAttachment;
 use IdealisticOfficeError;
 use IdealisticOfficeGeneralMessage;
 use IdealisticOfficeOutcome;
+use IdealisticOfficePortalIndependent;
 use IdealisticOfficeReader;
 use IdealisticOfficeStrings;
 use IdealisticOfficeTeamInitiator;
@@ -34,7 +35,7 @@ class GenericmessageCommand extends SystemCommand
 
         try {
             if (!$chat->isPrivateChat()) {
-                return Request::emptyResponse();
+                return $this->runInstalledPortal($message);
             }
             $author = $message->getFrom();
 
@@ -396,5 +397,55 @@ class GenericmessageCommand extends SystemCommand
                 ]));
             }
         }
+    }
+
+    private function runInstalledPortal(Message $message): ServerResponse
+    {
+        $author = $message->getFrom();
+        $content = $message->getText() ?? $message->getCaption();
+        $mention = "/@" . preg_quote($this->getTelegram()->getBotUsername(), "/") . "\\b/i";
+
+        // Installed portals only reply when the bot is tagged
+        if ($author === null
+            || $author->getIsBot()
+            || empty($content)
+            || !preg_match($mention, $content)) {
+            return Request::emptyResponse();
+        }
+        $content = trim(preg_replace($mention, "", $content));
+
+        if ($content === "") {
+            return Request::emptyResponse();
+        }
+        $outcome = IdealisticOfficePortalIndependent::runInstalledPortal(
+            IdealisticOfficeAccessPlatform::TELEGRAM,
+            $author->getId(),
+            $author->getUsername(),
+            trim($author->getFirstName() . " " . $author->getLastName()),
+            null,
+            $message->getChat()->getId(),
+            $message->getIsTopicMessage() ? $message->getMessageThreadId() : null,
+            $message->getMessageId(),
+            $content,
+            null
+        );
+
+        if ($outcome->isPositiveOutcome()) {
+            $chatId = $message->getChat()->getId();
+            $threadId = $message->getIsTopicMessage() ? $message->getMessageThreadId() : null;
+            TelegramBotHandler::sendTyping($chatId, $threadId);
+            TelegramBotHandler::$typing[TelegramBotHandler::getTypingKey($chatId, $threadId)] = array(
+                $chatId,
+                $threadId,
+                time() + TelegramBotHandler::TYPING_MAX_SECONDS
+            );
+        } else if ($outcome->getRawOutcome() === false) {
+            return TelegramServerResponse::handle(Request::sendMessage([
+                "chat_id" => $message->getChat()->getId(),
+                "text" => $outcome->getTranslatedMessage(),
+                "reply_to_message_id" => $message->getMessageId()
+            ]));
+        }
+        return Request::emptyResponse();
     }
 }
