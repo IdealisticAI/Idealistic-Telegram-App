@@ -405,13 +405,13 @@ class GenericmessageCommand extends SystemCommand
         $content = $message->getText() ?? $message->getCaption();
         $mention = "/@" . preg_quote($this->getTelegram()->getBotUsername(), "/") . "\\b/i";
 
-        // Installed portals only reply when the bot is tagged
         if ($author === null
             || $author->getIsBot()
-            || empty($content)
-            || !preg_match($mention, $content)) {
+            || empty($content)) {
             return Request::emptyResponse();
         }
+        // Installed portals only reply when the bot is tagged, other messages are kept as history
+        $isTagged = (bool)preg_match($mention, $content);
         $content = trim(preg_replace($mention, "", $content));
 
         if ($content === "") {
@@ -427,9 +427,14 @@ class GenericmessageCommand extends SystemCommand
             $message->getIsTopicMessage() ? $message->getMessageThreadId() : null,
             $message->getMessageId(),
             $content,
-            null
+            null,
+            false,
+            $isTagged
         );
 
+        if (!$isTagged) {
+            return Request::emptyResponse();
+        }
         if ($outcome->isPositiveOutcome()) {
             $chatId = $message->getChat()->getId();
             $threadId = $message->getIsTopicMessage() ? $message->getMessageThreadId() : null;
