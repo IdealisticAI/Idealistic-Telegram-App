@@ -334,7 +334,7 @@ $loop->addPeriodicTimer(
                 }
                 if ($portalMessage->hasMessage()) {
                     foreach (mb_str_split(
-                        $portalMessage->getMessage(),
+                        $portalMessage->getBrandedMessage(),
                         IdealisticOfficeLimit::MESSAGE_CHARACTER_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]
                     ) as $piece) {
                         TelegramServerResponse::handle(Request::sendMessage(array_merge($data, [
