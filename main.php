@@ -86,20 +86,27 @@ class TelegramBotHandler
         if ($threadId !== null) {
             $data["message_thread_id"] = $threadId;
         }
-        TelegramServerResponse::handle(Request::sendChatAction($data));
+        TelegramServerResponse::handle(Request::sendChatAction($data), true);
     }
 }
 
 $loop = Loop::get();
 $lastUpdateId = 0;
+$updatesPausedUntil = 0.0;
 
-$loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
+$loop->addPeriodicTimer(0, function () use (&$lastUpdateId, &$updatesPausedUntil, $telegram) {
+    $wait = $updatesPausedUntil - microtime(true);
+
+    if ($wait > 0) {
+        usleep((int)(min($wait, 1.0) * 1_000_000));
+        return;
+    }
     $response = TelegramServerResponse::handle(Request::getUpdates([
         'offset' => $lastUpdateId + 1,
         'timeout' => 1
-    ]));
+    ]), true);
 
-    if (TelegramServerResponse::handle($response)->isOk()) {
+    if ($response->isOk()) {
         try {
             foreach ($response->getResult() as $update) {
                 $telegram->setCustomInput(json_encode($update));
@@ -110,6 +117,7 @@ $loop->addPeriodicTimer(0, function () use (&$lastUpdateId, $telegram) {
             exit('Error handling update: ' . $e->getMessage());
         }
     } else {
+        $updatesPausedUntil = microtime(true) + TelegramServerResponse::getRetryDelay($response, 1);
         $error = $response->getDescription();
 
         if ($error) {
@@ -143,7 +151,7 @@ $loop->addPeriodicTimer(
                         && $notification->getAttachmentContent() !== null
                         || $notification->getMessage() !== null)) {
                     if ($notification->getAttachmentContent() === null) {
-                        TelegramServerResponse::handle(Request::sendMessage([
+                        TelegramServerResponse::send(fn() => Request::sendMessage([
                             "chat_id" => $chat_id,
                             "text" => $notification->getMessage()
                         ]));
@@ -250,13 +258,14 @@ $loop->addPeriodicTimer(
                         ]); // Do not handle this one, prone to same text edit errors
 
                         if (!$processing) {
-                            foreach ($pieces as $piece) {
-                                TelegramServerResponse::handle(Request::sendMessage([
+                            TelegramServerResponse::sendInOrder(array_map(
+                                fn($piece) => fn() => Request::sendMessage([
                                     "chat_id" => $chat_id,
                                     "text" => $piece,
                                     "reply_to_message_id" => $message->getMessageId()
-                                ]));
-                            }
+                                ]),
+                                $pieces
+                            ));
                         }
                     }
                 }
@@ -333,14 +342,15 @@ $loop->addPeriodicTimer(
                     $data["reply_to_message_id"] = $portalMessage->getMessageId();
                 }
                 if ($portalMessage->hasMessage()) {
-                    foreach (mb_str_split(
-                        $portalMessage->getBrandedMessage(),
-                        IdealisticOfficeLimit::MESSAGE_CHARACTER_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]
-                    ) as $piece) {
-                        TelegramServerResponse::handle(Request::sendMessage(array_merge($data, [
+                    TelegramServerResponse::sendInOrder(array_map(
+                        fn($piece) => fn() => Request::sendMessage(array_merge($data, [
                             "text" => $piece
-                        ])));
-                    }
+                        ])),
+                        mb_str_split(
+                            $portalMessage->getBrandedMessage(),
+                            IdealisticOfficeLimit::MESSAGE_CHARACTER_LIMIT[IdealisticOfficeAccessPlatform::TELEGRAM]
+                        )
+                    ));
                 }
                 $attachment = $portalMessage->getAttachment();
 
