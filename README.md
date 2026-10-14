@@ -1,1 +1,1 @@
-Telegram implementation of the Idealistic application.
+# Status: Undergoing Improvements
